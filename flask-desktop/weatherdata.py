@@ -9,10 +9,12 @@ Authors:
 Fabian Märki, Jelle Schutter, Lucas Brönnimann
 """
 
+import influxdb
 import pandas as pd
 from pandas import json_normalize
 import numpy as np
 from influxdb import DataFrameClient
+import pandas
 import requests
 from requests.exceptions import ConnectionError
 import json
@@ -25,13 +27,13 @@ import threading
 from collections import deque
 
 class Config:
-    db_host = 'localhost'
-    db_port = 8086
-    db_name = 'meteorology'
-    stations = ['mythenquai', 'tiefenbrunnen']
+    db_host = 'localhost' #database host
+    db_port = 8086 #port from database
+    db_name = 'meteorology' #database name
+    stations = ['mythenquai', 'tiefenbrunnen'] #table names
     stations_force_query_last_entry = False
-    stations_last_entries = {}
-    keys_mapping = {
+    stations_last_entries = {} #last entries in database
+    keys_mapping = { 
         'values.timestamp_cet.value': 'timestamp_cet',
         'values.air_temperature.value': 'air_temperature',
         'values.barometric_pressure_qfe.value': 'barometric_pressure_qfe',
@@ -46,26 +48,26 @@ class Config:
         'values.wind_speed_avg_10min.value': 'wind_speed_avg_10min',
         'values.windchill.value': 'windchill'
     }
-    historic_data_chunksize = 10000
-    client = None
+    historic_data_chunksize = 10000 #csv file of historic data is read in chunks -> this is the size
+    client = None #database client
 
 
 def __set_last_db_entry(config, station, entry):
-    current_last_time = __extract_last_db_day(config.stations_last_entries.get(station, None), station, None)
-    entry_time = __extract_last_db_day(entry, station, None)
+    current_last_time = __extract_last_db_day(config.stations_last_entries.get(station, None), station, None) #get date of "stations_last_entries" from "station"
+    entry_time = __extract_last_db_day(entry, station, None) #get last date of uploaded chunk
 
-    if current_last_time is None and entry_time is not None:
+    if current_last_time is None and entry_time is not None: #not written to "stations_last_entries" yet
         config.stations_last_entries[station] = entry
-    elif current_last_time is not None and entry_time is not None and current_last_time < entry_time:
+    elif current_last_time is not None and entry_time is not None and current_last_time < entry_time: #newer last time found
         config.stations_last_entries[station] = entry
 
 def __get_last_db_entry(config, station):
     last_entry = None
-    if not config.stations_force_query_last_entry:
+    if not config.stations_force_query_last_entry: #force query last entry not enabled
         # speedup for Raspberry Pi - last entry query takes > 2 Sec.!
-        last_entry = config.stations_last_entries.get(station, None)
+        last_entry = config.stations_last_entries.get(station, None) #get entry for "station"
 
-    if last_entry is None:
+    if last_entry is None: #if no entry found or force query last entry enabled
         try:
             # we are only interested in time, however need to provide any field to make query work
             query = f'SELECT air_temperature FROM {station} ORDER BY time DESC LIMIT 1'
@@ -80,16 +82,16 @@ def __get_last_db_entry(config, station):
     return last_entry
 
 def __extract_last_db_day(last_entry, station, default_last_db_day):
-    if last_entry is not None:
+    if last_entry is not None: #last_entry contains data
         val = None
-        if isinstance(last_entry, pd.DataFrame):
+        if isinstance(last_entry, pd.DataFrame): #last_entry is a pandas Dataframe 
             val = last_entry
-        elif isinstance(last_entry, dict):
-            val = last_entry.get(station, None)
+        elif isinstance(last_entry, dict): #last_entry is a dictionary
+            val = last_entry.get(station, None) #get pd.dataframe from key "station", return "None" if key not found
 
-        if val is not None:
-            if not val.index.empty:
-                return val.index[0].replace(tzinfo = None)
+        if val is not None: #if last entry found
+            if not val.index.empty: #index of value is not empty
+                return val.index[0].replace(tzinfo = None) #return date and remove tzinfo
 
     return default_last_db_day
 
@@ -116,17 +118,25 @@ def __get_data_of_day(day, station):
             print(f'Request for \'{e.request.url}\' failed. ({e.args[0].args[0]})\nTrying again in 10 seconds...')
             sleep(10)
 
-def __define_types(data, date_format):
-    if not data.empty:
+def __define_types(data : pandas.DataFrame, date_format):
+    '''Description:
+    
+    renames timestamp column,
+    converts cet to utc and use own date format,
+    set timestamp to index  column,
+    replace empty elements with 0,
+    set datatype of all columns (except timestamp) to float64
+    '''
+    if not data.empty: #data is not empty
         # convert cet to utc
-        data['timestamp'] = pd.to_datetime(data['timestamp_cet'], format = date_format) - timedelta(hours = 1)
-        data.drop('timestamp_cet', axis = 1, inplace = True)
-        data.set_index('timestamp', inplace = True)
+        data['timestamp'] = pd.to_datetime(data['timestamp_cet'], format = date_format) - timedelta(hours = 1) #convert from "timestamp_cet" to new date_format and create new column "timestamp" subtract one hour (why? i think it should be 2 hours)
+        data.drop('timestamp_cet', axis = 1, inplace = True) #drop old timestamp column
+        data.set_index('timestamp', inplace = True) #set "timestamp" as the index column and delete the old index column (inpace -> instead of creating a new dataframe, override the old one)
 
-    data.replace('.', 0, inplace = True)
-    for column in data.columns[0:]:
-        if column != 'timestamp':
-            data[column] = data[column].astype(np.float64)
+    data.replace('.', 0, inplace = True) #repalce al the missing values (represented as .) with a 0
+    for column in data.columns[0:]: #iterate trough all columns
+        if column != 'timestamp': #not the timestamp column
+            data[column] = data[column].astype(np.float64) #set datatype to float
 
     return data
 
@@ -154,8 +164,8 @@ def __clean_data(config, data_of_last_day, last_db_entry, station):
     return normalized
 
 def __add_data_to_db(config, data, station):
-    config.client.write_points(data, station, time_precision = 's', database = config.db_name)
-    __set_last_db_entry(config, station, data.tail(1))
+    config.client.write_points(data, station, time_precision = 's', database = config.db_name) #write rows (params: data = DataFrame, station = name of measurement, time_precision = seconds, database = db_name)
+    __set_last_db_entry(config, station, data.tail(1)) #get last value from data (newest entry) and store it
 
 def __signal_handler(sig, frame):
     sys.exit(0)
@@ -168,11 +178,11 @@ def connect_db(config):
     config (Config): The Config containing the DB connection info
 
    """
-    if config.client is None:
+    if config.client is None: #if you havent already created a client
         # https://www.influxdata.com/blog/getting-started-python-influxdb/
-        config.client = DataFrameClient(host = config.db_host, port = config.db_port)
-        config.client.create_database(config.db_name)
-        config.client.switch_database(config.db_name)
+        config.client = DataFrameClient(host = config.db_host, port = config.db_port) #connect to database
+        config.client.create_database(config.db_name) #create a new database
+        config.client.switch_database(config.db_name) #select created database
 
 def clean_db(config):
     """Drops the whole database and creates it again
@@ -181,9 +191,9 @@ def clean_db(config):
     config (Config): The Config containing the DB connection info
 
    """
-    config.client.drop_database(config.db_name)
-    config.client.create_database(config.db_name)
-    config.stations_last_entries.clear()
+    config.client.drop_database(config.db_name) #drop the database
+    config.client.create_database(config.db_name) #create a new database
+    config.stations_last_entries.clear() #clear the variable "stations_last_entries" in the config
 
 def import_csv_file(config, station, file_name):
     """Imports data from a .csv file
@@ -194,12 +204,12 @@ def import_csv_file(config, station, file_name):
     file_name (String): Path to the file from which the data shall be imported
 
    """
-    if os.path.isfile(file_name):
+    if os.path.isfile(file_name): #does the path point to a file?
         print('\tLoad ' + file_name)
-        for chunk in pd.read_csv(file_name, delimiter = ',', chunksize = config.historic_data_chunksize):
-            chunk = __define_types(chunk, '%Y-%m-%dT%H:%M:%S')
+        for chunk in pd.read_csv(file_name, delimiter = ',', chunksize = config.historic_data_chunksize): #read the csv file in chunks
+            chunk = __define_types(chunk, '%Y-%m-%dT%H:%M:%S') #preprocess data
             print('Add ' + station + ' from ' + str(chunk.index[0]) + ' to ' + str(chunk.index[-1]))
-            __add_data_to_db(config, chunk, station)
+            __add_data_to_db(config, chunk, station) #add data to database
     else:
         print(file_name + ' does not seem to exist.')
 
