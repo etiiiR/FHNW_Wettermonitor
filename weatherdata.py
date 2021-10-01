@@ -195,15 +195,18 @@ def clean_db(config):
     config.client.create_database(config.db_name) #create a new database
     config.stations_last_entries.clear() #clear the variable "stations_last_entries" in the config
 
-def import_csv_file(config, station, file_name):
+def try_import_csv_file(config, station, file_name):
     """Imports data from a .csv file
 
     Parameters:
     config (Config): The Config containing the DB connection info
     station (String): Either 'Mythenquai' or 'Tiefenbrunnen'
     file_name (String): Path to the file from which the data shall be imported
+    """
+    if __is_csv_imported(config, station):
+        print(file_name + ' already imported.')
+        return
 
-   """
     if os.path.isfile(file_name): #does the path point to a file?
         print('\tLoad ' + file_name)
         for chunk in pd.read_csv(file_name, delimiter = ',', chunksize = config.historic_data_chunksize): #read the csv file in chunks
@@ -212,6 +215,13 @@ def import_csv_file(config, station, file_name):
             __add_data_to_db(config, chunk, station) #add data to database
     else:
         print(file_name + ' does not seem to exist.')
+
+
+def __is_csv_imported(config, station):
+    last_db_entry = __get_last_db_entry(config, station)
+    last_db_day = __extract_last_db_day(last_db_entry, station, None)
+    return last_db_day != None and last_db_day > datetime(2007, 7, 31)
+
 
 def import_latest_data(config, periodic_read = False):
     """Reads the latest data from the Wasserschutzpolizei Zurich weather API
