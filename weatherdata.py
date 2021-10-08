@@ -293,3 +293,13 @@ def import_latest_data(config, periodic_read = False):
         if first_cycle:
             first_cycle = False
 
+def get_entries(config, station, start_time : str):
+    """
+    query all fields and key from station, start_time: [x]y, [x]d, [x]h, [x]m, [x]s
+    """
+
+    query = f'SELECT * FROM {station} WHERE time > now() - {start_time}'
+    answer = config.client.query(query) #query entries -> dictionary
+    val = answer.get(station, None) #get pd.dataframe from key "station", return "None" if key not found
+    return 
+
