@@ -8,7 +8,7 @@ config = wd.Config() #connect to DB
 
 
 
-def initDB() -> tuple(bool, Exception):
+def initDB() -> tuple:
     """
     Connect to DataBase and add old stats to dataBase if not loaded yet
     """
@@ -35,10 +35,14 @@ def logger():
         except Exception as e:
             print("Failed to update latest weather data to dataBase:\n", e)
 
-if __name__ == "__Main__":
+if __name__ == "__main__":
+
+    print("Database initializing...")
     dbInit_sucess, error = initDB()
 
     if dbInit_sucess:
+        print("Database successfully initialized")
+
         thread_logger = Thread(target = logger)
         thread_logger.start()
         

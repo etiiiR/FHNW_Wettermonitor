@@ -183,6 +183,7 @@ def connect_db(config):
         config.client = DataFrameClient(host = config.db_host, port = config.db_port) #connect to database
         config.client.create_database(config.db_name) #create a new database
         config.client.switch_database(config.db_name) #select created database
+    print("Successfully connected to DB")
 
 def clean_db(config):
     """Drops the whole database and creates it again
