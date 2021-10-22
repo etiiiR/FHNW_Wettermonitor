@@ -223,7 +223,7 @@ def __is_csv_imported(config, station):
     return last_db_day != None and last_db_day > datetime(2007, 7, 31)
 
 
-def import_latest_data(config, periodic_read = False):
+def import_latest_data(config, periodic_read = False, callback = None):
     """Reads the latest data from the Wasserschutzpolizei Zurich weather API
 
     Parameters:
@@ -282,6 +282,11 @@ def import_latest_data(config, periodic_read = False):
             if normalized_data.size > 0:
                 __add_data_to_db(config, normalized_data, station)
                 print('Handle ' + station + ' from ' + str(normalized_data.index[0]) + ' to ' + str(normalized_data.index[-1]))
+
+                #do a callback if vailable
+                if callback:
+                    callback()
+
             else:
                 print('No new data received for ' + station)
 
@@ -293,7 +298,7 @@ def import_latest_data(config, periodic_read = False):
         if first_cycle:
             first_cycle = False
 
-def get_entries(config, station, start_time : str):
+def get_entries(config, station, start_time : str) -> pd.DataFrame:
     """
     query all fields and key from station, start_time: [x]y, [x]d, [x]h, [x]m, [x]s
     """
@@ -301,5 +306,5 @@ def get_entries(config, station, start_time : str):
     query = f'SELECT * FROM {station} WHERE time > now() - {start_time}'
     answer = config.client.query(query) #query entries -> dictionary
     val = answer.get(station, None) #get pd.dataframe from key "station", return "None" if key not found
-    return 
+    return val
 
