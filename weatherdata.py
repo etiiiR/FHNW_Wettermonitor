@@ -237,23 +237,26 @@ def import_latest_data(config, periodic_read = False, callback = None):
     current_day = current_time.replace(hour = 0, minute = 0, second = 0, microsecond = 0)
     last_db_days = [current_day] * len(config.stations)
 
+    #get last date (day) of last db entry
     for idx, station in enumerate(config.stations):
         last_db_entry = __get_last_db_entry(config, station)
         last_db_days[idx] = __extract_last_db_day(last_db_entry, station, last_db_days[idx]) + timedelta(hours = 1)
 
+    #set signal handler if periodic read available
     if periodic_read and threading.current_thread() is threading.main_thread():
         signal.signal(signal.SIGINT, __signal_handler)
         print('\nPress Ctrl+C to stop!\n')
 
-    check_db_day = min(last_db_days)
-    check_db_day = check_db_day.replace(hour = 0, minute = 0, second = 0, microsecond = 0)
+    check_db_day = min(last_db_days) #get oldest date of newest entries
+    check_db_day = check_db_day.replace(hour = 0, minute = 0, second = 0, microsecond = 0) #extract date (day) only
 
     first_cycle = True
     last_cycle = False
 
     while True:
         # check if all historic data (retrieved from API) has been processed
-        if not first_cycle and periodic_read and check_db_day >= current_day and not first_cycle:
+        #wait 10min until the next call 
+        if not first_cycle and periodic_read and check_db_day >= current_day and not first_cycle: #if its not the first cycle, and no new day arrived
             # once every 10 Min
             current_time = datetime.utcnow() + timedelta(hours = 1)
             sleep_until = current_time + timedelta(minutes = 10)
@@ -266,22 +269,22 @@ def import_latest_data(config, periodic_read = False, callback = None):
             sleep(sleep_sec)
             current_day = current_time.replace(hour = 0, minute = 0, second = 0, microsecond = 0)
 
-        if not periodic_read and check_db_day >= current_day:
+        if not periodic_read and check_db_day >= current_day: #if periodic read is disabled and newest data is already stored
             if last_cycle:
                 return
             last_cycle = True
 
         for idx, station in enumerate(config.stations):
-            if last_db_days[idx].replace(hour = 0, minute = 0, second = 0, microsecond = 0) > check_db_day:
+            if last_db_days[idx].replace(hour = 0, minute = 0, second = 0, microsecond = 0) > check_db_day: #if newest data of station is already stored -> continue with other station
                 continue
             last_db_entry = __get_last_db_entry(config, station)
             last_db_days[idx] = __extract_last_db_day(last_db_entry, station, last_db_days[idx])
-            data_of_last_db_day = __get_data_of_day(check_db_day, station)
+            data_of_last_db_day = __get_data_of_day(check_db_day, station) #get data of station (whole day)
 
-            normalized_data = __clean_data(config, data_of_last_db_day, last_db_entry, station)
+            normalized_data = __clean_data(config, data_of_last_db_day, last_db_entry, station) #extract data, that is not stored yet
 
-            if normalized_data.size > 0:
-                __add_data_to_db(config, normalized_data, station)
+            if normalized_data.size > 0: #if new data is available
+                __add_data_to_db(config, normalized_data, station) #add data to database
                 print('Handle ' + station + ' from ' + str(normalized_data.index[0]) + ' to ' + str(normalized_data.index[-1]))
 
                 #do a callback if vailable
@@ -291,10 +294,10 @@ def import_latest_data(config, periodic_read = False, callback = None):
             else:
                 print('No new data received for ' + station)
 
-        if check_db_day < current_day:
-            check_db_day = check_db_day + pd.DateOffset(1)
-        elif periodic_read and check_db_day >= current_day:
-            check_db_day = datetime.utcnow() + timedelta(hours = 1)
+        if check_db_day < current_day: #new day arrived
+            check_db_day = check_db_day + pd.DateOffset(1) #add day 
+        elif periodic_read and check_db_day >= current_day: #if periodic read enabled and it is the same day
+            check_db_day = datetime.utcnow() + timedelta(hours = 1) #update day (get current date)
 
         if first_cycle:
             first_cycle = False
