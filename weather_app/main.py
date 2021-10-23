@@ -23,7 +23,6 @@ def get_weather_store_in_data(data):
 def update_data():
     print('Update Data from database')
     data.append("Data")
-    return app.render_template('some_page.html')
 
 @app.route("/")
 async def hello():
