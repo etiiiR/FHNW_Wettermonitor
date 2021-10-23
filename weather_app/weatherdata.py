@@ -25,6 +25,7 @@ from time import sleep
 import os
 import threading
 from collections import deque
+import main as update
 
 class Config:
     db_host = 'localhost' #database host
@@ -51,6 +52,8 @@ class Config:
     historic_data_chunksize = 10000 #csv file of historic data is read in chunks -> this is the size
     client = None #database client
 
+def say_goodbye():
+    print('bye')
 
 def __set_last_db_entry(config, station, entry):
     current_last_time = __extract_last_db_day(config.stations_last_entries.get(station, None), station, None) #get date of "stations_last_entries" from "station"
@@ -223,7 +226,7 @@ def __is_csv_imported(config, station):
     return last_db_day != None and last_db_day > datetime(2007, 7, 31)
 
 
-def import_latest_data(config, periodic_read = False, callback = None):
+def import_latest_data(config, periodic_read = False, callback = update.update_data):
     """Reads the latest data from the Wasserschutzpolizei Zurich weather API
 
     Parameters:
