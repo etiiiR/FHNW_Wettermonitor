@@ -24,8 +24,19 @@ def update_data():
     print('Update Data from database')
     data.append("Data")
 
+
+def get_data_continuesly():
+    weatherimport.read_data_continuesly()
+
+@app.before_first_request
+def get_data():
+    weatherimport.set_up_weather()
+    t=threading.Thread(target=get_data_continuesly)
+    t.start()
+    return
+
 @app.route("/")
-async def hello():
+def hello():
     # todoo check if the database has old data if yes then update it and afterwards load the homepage
     context = {
 	    'fruits' : data,
@@ -36,15 +47,7 @@ async def hello():
 def home():
     return render_template('some_page.html')
 
-@app.before_first_request
-def get_data():
-    weatherimport.set_up_weather()
-    t=threading.Thread(target=get_data_continuesly)
-    t.start()
-    return
 
-def get_data_continuesly():
-    weatherimport.read_data_continuesly()
 
 
 
