@@ -30,7 +30,7 @@ def get_data_continuesly():
 
 @app.before_first_request
 def get_data():
-    weatherimport.set_up_weather()
+    weatherimport.init()
     t=threading.Thread(target=get_data_continuesly)
     t.start()
     return

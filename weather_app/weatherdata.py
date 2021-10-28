@@ -315,3 +315,24 @@ def get_entries(config, station, start_time : str) -> pd.DataFrame:
     val = answer.get(station, None) #get pd.dataframe from key "station", return "None" if key not found
     return val
 
+def get_attr_entries(config, attribute, station, start_time : str) -> pd.DataFrame:
+    """
+    query attribute from station, start_time: [x]y, [x]d, [x]h, [x]m, [x]s
+    """
+
+    query = f'SELECT {attribute} FROM {station} WHERE time > now() - {start_time}'
+    answer = config.client.query(query) #query entries -> dictionary
+    val = answer.get(station, None) #get pd.dataframe from key "station", return "None" if key not found
+    return val
+
+def get_multible_attr_entries(config, attributes, station, start_time : str) -> pd.DataFrame:
+    """
+    query attributes from station, start_time: [x]y, [x]d, [x]h, [x]m, [x]s
+    """
+
+    query = f'SELECT {",".join(attributes)} FROM {station} WHERE time > now() - {start_time}'
+    answer = config.client.query(query) #query entries -> dictionary
+    val = answer.get(station, None) #get pd.dataframe from key "station", return "None" if key not found
+    return val
+
+
