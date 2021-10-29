@@ -39,6 +39,15 @@ def read_data_continuesly():
 
   wd.import_latest_data(config, periodic_read=True)
 
+#functional
+def _get_fmt(axis): #from https://stackoverflow.com/questions/49106889/get-the-date-format-on-a-matplotlib-plots-x-axis
+    axis.axes.figure.canvas.draw()
+    formatter = axis.get_major_formatter()
+    locator_unit_scale = float(formatter._locator._get_unit())       
+    fmt = next((fmt for scale, fmt in sorted(formatter.scaled.items())
+                if scale >= locator_unit_scale),
+                       formatter.defaultfmt)
+    return fmt
 
 #get entries
 def get_all_measurements(station : str, start_time : str, timeFilling = True):
@@ -88,7 +97,7 @@ def get_measurements(measurements : list(Measurement), station : str, start_time
 
 
 #generate chart
-def generate_spline(measurements : list(Measurement), station : str, start_time : str, showPlot = False, imagePath = None):
+def generate_spline(measurements : list(Measurement), station : str, start_time : str, ylabel_name : str, showPlot = False, imagePath = None):
   """
   generate and show/save plot (missing time -> fill with NaN)
   """
@@ -97,14 +106,15 @@ def generate_spline(measurements : list(Measurement), station : str, start_time 
 
   df.plot(x = "time", y = [measurement.value for measurement in measurements])
 
-  #plt.plot(x = df["time"].values, y = df[[measurement.value for measurement in measurements]].values)
+  plt.ylabel(ylabel_name)
+  plt.xlabel("Zeit t in [YY:MM:DD hh:mm]")
 
   if showPlot:
     plt.show()
   else:
-    plt.savefig(imagePath)
+    plt.savefig(imagePath, bbox_inches='tight')
 
-def generate_plot_vector(measurements : list(tuple((Measurement, tuple((str, str, str))))), station : str, start_time : str, showPlot = False, imagePath = None):
+def generate_plot_colMatrix(measurements : list(tuple((Measurement, tuple((str, str, str))))), station : str, start_time : str, showPlot = False, imagePath = None):
   """
   generiere vektor aus plots mit x Zeilen (missing time -> fill with NaN), Params: (measurements: liste aus Messungen und deren Einheiten tuple(name z.B. Temperatur, Formelzeichen: T, einheit: °C), station: stationsname, 
                                                             start_time: startzeit der Messungen z.B. 1d, showPlot: true -> plotte | false -> generiere image, imagepath: speicherpfad des images) 
@@ -115,7 +125,7 @@ def generate_plot_vector(measurements : list(tuple((Measurement, tuple((str, str
 
   df = get_measurements([measurement[0] for measurement in measurements], station, start_time)
 
-  fig, axs = plt.subplots(len(measurements), 1, sharex=True)
+  fig, axs = plt.subplots(len(measurements), 1)
 
   for i, measurement in enumerate(measurements):
     measurement_type = measurement[0]
@@ -123,17 +133,48 @@ def generate_plot_vector(measurements : list(tuple((Measurement, tuple((str, str
     unit_symbol = measurement[1][1]
     unit = measurement[1][2]
 
-    print(unit_name)
-    print(unit)
-
     axs[i].plot(df["time"].values, df[measurement_type.value].values)
-    axs[i].set(xlabel = "time", ylabel = f"{unit_name} {unit_symbol} in {unit}")
+    axs[i].set(xlabel = f"Zeit t in {_get_fmt(axs[i].xaxis)}", ylabel = f"{unit_name} {unit_symbol} in {unit}")
     axs[i].legend([unit_name])
+
+  fig.autofmt_xdate()
+  fig.tight_layout()
 
   if showPlot:
     plt.show()
   else:
-    plt.savefig(imagePath)
+    plt.savefig(imagePath, bbox_inches='tight')
+
+def generate_plot_rowMatrix(measurements : list(tuple((Measurement, tuple((str, str, str))))), station : str, start_time : str, showPlot = False, imagePath = None):
+  """
+  generiere Zeilenmatrix aus plots mit x Spalten (missing time -> fill with NaN), Params: (measurements: liste aus Messungen und deren Einheiten tuple(name z.B. Temperatur, Formelzeichen: T, einheit: °C), station: stationsname, 
+                                                            start_time: startzeit der Messungen z.B. 1d, showPlot: true -> plotte | false -> generiere image, imagepath: speicherpfad des images) 
+  """
+
+  if len(measurements) <= 1:
+    raise Exception("Es müssen mindestens 2 measurements angegeben werden!")
+
+  df = get_measurements([measurement[0] for measurement in measurements], station, start_time)
+
+  fig, axs = plt.subplots(1, len(measurements))
+
+  for i, measurement in enumerate(measurements):
+    measurement_type = measurement[0]
+    unit_name = measurement[1][0]
+    unit_symbol = measurement[1][1]
+    unit = measurement[1][2]
+
+    axs[i].plot(df["time"].values, df[measurement_type.value].values)
+    axs[i].set(xlabel = f"Zeit t in {_get_fmt(axs[i].xaxis)}", ylabel = f"{unit_name} {unit_symbol} in {unit}")
+    axs[i].legend([unit_name])
+
+  fig.autofmt_xdate()
+  fig.tight_layout()
+
+  if showPlot:
+    plt.show()
+  else:
+    plt.savefig(imagePath, bbox_inches='tight')
 
 def generate_windRose(station : str, start_time : str, showPlot = False, imagePath = None):
   """
@@ -147,10 +188,12 @@ def generate_windRose(station : str, start_time : str, showPlot = False, imagePa
   ax.bar(df["wind_direction"].values, df["wind_speed_avg_10min"].values, normed = True, opening = 0.8, edgecolor = "white")
   ax.set_legend()
 
+  plt.setp(ax.get_xticklabels(), rotation=30, horizontalalignment='right')
+
   if showPlot:
     plt.show()
   else:
-    plt.savefig(imagePath)
+    plt.savefig(imagePath, bbox_inches='tight')
   
 
 #anomaly detection
