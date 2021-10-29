@@ -1,4 +1,6 @@
 from os import path
+
+from numpy import dsplit
 import weatherdata as wd
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -37,35 +39,48 @@ def read_data_continuesly():
 
   wd.import_latest_data(config, periodic_read=True)
 
+
 #get entries
-def get_all_measurements(station : str, start_time : str):
+def get_all_measurements(station : str, start_time : str, timeFilling = True):
   """
-  get all entries in a specific time range (now - start_time)
+  get all entries in a specific time range (now - start_time) and fill up missing timeSteps with NaN (can be disabled)
   """
 
   df = wd.get_entries(config, station, start_time)
+
+  if timeFilling:
+    df = df.resample("10min").asfreq()#resample (zeitlücken mit NaN füllen)
+
   df["time"] = df.index
   df = df.reset_index(drop = True)
 
   return df
 
-def get_measurement(measurment : Measurement, station : str, start_time : str):
+def get_measurement(measurment : Measurement, station : str, start_time : str, timeFilling = True):
   """
-  get single measurement in a specific time range (now - start_time)
+  get single measurement in a specific time range (now - start_time) and fill up missing timeSteps with NaN (can be disabled)
   """
 
   df = wd.get_attr_entries(config, str(measurment.value), station, start_time)
+
+  if timeFilling:
+    df = df.resample("10min").asfreq()#resample (zeitlücken mit NaN füllen)
+
   df["time"] = df.index
   df = df.reset_index(drop = True)
 
   return df
 
-def get_measurements(measurements : list(Measurement), station : str, start_time : str):
+def get_measurements(measurements : list(Measurement), station : str, start_time : str, timeFilling = True):
   """
-  get multible measurement in a specific time range (now - start_time)
+  get multible measurements in a specific time range (now - start_time) and fill up missing timeSteps with NaN (can be disabled)
   """
 
   df = wd.get_multible_attr_entries(config, [measurement.value for measurement in measurements], station, start_time)
+  
+  if timeFilling:
+    df = df.resample("10min").asfreq()#resample (zeitlücken mit NaN füllen)
+  
   df["time"] = df.index
   df = df.reset_index(drop = True)
 
@@ -75,7 +90,7 @@ def get_measurements(measurements : list(Measurement), station : str, start_time
 #generate chart
 def generate_spline(measurements : list(Measurement), station : str, start_time : str, showPlot = False, imagePath = None):
   """
-  generate and show/save plot
+  generate and show/save plot (missing time -> fill with NaN)
   """
 
   df = get_measurements(measurements, station, start_time)
@@ -91,8 +106,8 @@ def generate_spline(measurements : list(Measurement), station : str, start_time 
 
 def generate_plot_vector(measurements : list(tuple((Measurement, tuple((str, str, str))))), station : str, start_time : str, showPlot = False, imagePath = None):
   """
-  generiere vektor aus plots mit x Zeilen, Params: (measurements: liste aus Messungen und deren Einheiten tuple(name z.B. Temperatur, Formelzeichen: T, einheit: °C), station: stationsname, 
-                                                            start_time: startzeit der Messungen z.B. 1d, showPlot: true -> plotte | false -> generiere image, imagepath: speicherpfad des images)
+  generiere vektor aus plots mit x Zeilen (missing time -> fill with NaN), Params: (measurements: liste aus Messungen und deren Einheiten tuple(name z.B. Temperatur, Formelzeichen: T, einheit: °C), station: stationsname, 
+                                                            start_time: startzeit der Messungen z.B. 1d, showPlot: true -> plotte | false -> generiere image, imagepath: speicherpfad des images) 
   """
 
   if len(measurements) <= 1:
@@ -122,11 +137,11 @@ def generate_plot_vector(measurements : list(tuple((Measurement, tuple((str, str
 
 def generate_windRose(station : str, start_time : str, showPlot = False, imagePath = None):
   """
-  generiere eine windrose, Params: (station: stationsname, start_time: startzeit der Messungen z.B. 1d, showPlot: true -> plotte | false -> generiere image, imagepath: speicherpfad des images))
+  generiere eine windrose (missing time -> wird ignoriert), Params: (station: stationsname, start_time: startzeit der Messungen z.B. 1d, showPlot: true -> plotte | false -> generiere image, imagepath: speicherpfad des images))
   """
 
 
-  df = get_measurements([Measurement.Wind_direction, Measurement.Wind_speed_avg_10min], station, start_time)
+  df = get_measurements([Measurement.Wind_direction, Measurement.Wind_speed_avg_10min], station, start_time, timeFilling = False)
 
   ax = WindroseAxes.from_ax()
   ax.bar(df["wind_direction"].values, df["wind_speed_avg_10min"].values, normed = True, opening = 0.8, edgecolor = "white")
@@ -137,5 +152,27 @@ def generate_windRose(station : str, start_time : str, showPlot = False, imagePa
   else:
     plt.savefig(imagePath)
   
+
+#anomaly detection
+def extract_anomaly(station : str, start_time : str):
+  """
+  return stange data (null values, no values, data interruption)
+  """
+
+  df = get_all_measurements(station, start_time)
+  df_anomaly = pd.DataFrame
+
+  is_NaN = df.isnull()
+  row_has_NaN = is_NaN.any(axis=1)
+  df_has_NaN = df[row_has_NaN]
+
+  is_Na = df.isna()
+  row_has_Na = is_Na.any(axis=1)
+  df_has_Na = df[row_has_Na]
+
+  df_anomaly = pd.concat([df_has_NaN, df_has_Na])
+
+  return df_anomaly
+
 if __name__ == '__main__':
   pass

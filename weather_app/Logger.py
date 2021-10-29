@@ -7,8 +7,14 @@ wd.init()
 
 #print(wd.get_measurement(wd.Measurement.Humidity, "mythenquai", "1d"))
 
-df = wd.generate_spline([wd.Measurement.Air_temp], "mythenquai", "1w", showPlot = True)
+#print(wd.extract_anomaly("mythenquai", "100w")) 
 
-wd.generate_plot_matrix_x_1([(wd.Measurement.Air_temp, ("Temperatur", "T", "°C")), (wd.Measurement.Humidity, ("Luftfeuchtigkeit", "φ", "%"))], "mythenquai", "1w", showPlot = True)
+wd.generate_spline([wd.Measurement.Air_temp], "mythenquai", "10w", showPlot = True)
+
+wd.generate_plot_vector([(wd.Measurement.Air_temp, ("Temperatur", "T", "°C")), (wd.Measurement.Humidity, ("Luftfeuchtigkeit", "φ", "%"))], "mythenquai", "1w", showPlot = True)
 
 wd.generate_windRose("mythenquai", "1d", showPlot = True)
+
+
+
+#vorsicht... es gibt teilweise leere datenpunkte (NaN), ausserdem sind zeitsprünge möglich (unterbruch der Messungen)

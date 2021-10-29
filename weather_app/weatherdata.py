@@ -25,6 +25,7 @@ from time import sleep
 import os
 import threading
 from collections import deque
+from requests.models import HTTPError
 import main as update
 
 class Config:
@@ -98,7 +99,7 @@ def __extract_last_db_day(last_entry, station, default_last_db_day):
 
     return default_last_db_day
 
-def __get_data_of_day(day, station):
+def __get_data_of_day(day, station, no_periodic_retry = False):
     # convert to local time of station
     base_url = 'https://tecdottir.herokuapp.com/measurements/{}'
     day_str = day.strftime('%Y-%m-%d')
@@ -118,7 +119,17 @@ def __get_data_of_day(day, station):
                 response.raise_for_status()
                 break
         except ConnectionError as e:
+            if no_periodic_retry:
+                return False
+
             print(f'Request for \'{e.request.url}\' failed. ({e.args[0].args[0]})\nTrying again in 10 seconds...')
+            sleep(10)
+
+        except HTTPError as ex:
+            if no_periodic_retry:
+                return False
+
+            print(f'Request for \'{ex.request.url}\' failed. ({ex})\nTrying again in 10 seconds...')
             sleep(10)
 
 def __define_types(data : pandas.DataFrame, date_format):
@@ -277,12 +288,22 @@ def import_latest_data(config, periodic_read = False, callback = update.update_d
                 return
             last_cycle = True
 
+        interrupt = []
         for idx, station in enumerate(config.stations):
             if last_db_days[idx].replace(hour = 0, minute = 0, second = 0, microsecond = 0) > check_db_day: #if newest data of station is already stored -> continue with other station
                 continue
             last_db_entry = __get_last_db_entry(config, station)
             last_db_days[idx] = __extract_last_db_day(last_db_entry, station, last_db_days[idx])
-            data_of_last_db_day = __get_data_of_day(check_db_day, station) #get data of station (whole day)
+            data = __get_data_of_day(check_db_day, station, not periodic_read) #get data of station (whole day)
+
+            if type(data) != bool: #if no boolean returned
+                interrupt.append(False) #append interrupt flag (False)
+                data_of_last_db_day = data
+
+            elif not data:
+                print(f"Establishing connection to station {station} failed but ignored... continue.")
+                interrupt.append(True) #append interrupt flag (True)
+                continue
 
             normalized_data = __clean_data(config, data_of_last_db_day, last_db_entry, station) #extract data, that is not stored yet
 
@@ -296,6 +317,9 @@ def import_latest_data(config, periodic_read = False, callback = update.update_d
 
             else:
                 print('No new data received for ' + station)
+
+        if False not in interrupt: #if all stations returned an error
+            return
 
         if check_db_day < current_day: #new day arrived
             check_db_day = check_db_day + pd.DateOffset(1) #add day 
