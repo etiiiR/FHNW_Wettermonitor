@@ -7,5 +7,8 @@ wd.init()
 
 #print(wd.get_measurement(wd.Measurement.Humidity, "mythenquai", "1d"))
 
-df = wd.generate_chart_multibleSeries([wd.Measurement.Humidity, wd.Measurement.Wind_chill], "mythenquai", "1w", showPlot = True)
+df = wd.generate_spline([wd.Measurement.Air_temp], "mythenquai", "1w", showPlot = True)
 
+wd.generate_plot_matrix_x_1([(wd.Measurement.Air_temp, ("Temperatur", "T", "°C")), (wd.Measurement.Humidity, ("Luftfeuchtigkeit", "φ", "%"))], "mythenquai", "1w", showPlot = True)
+
+wd.generate_windRose("mythenquai", "1d", showPlot = True)

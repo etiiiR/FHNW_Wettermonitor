@@ -3,6 +3,7 @@ import weatherdata as wd
 import matplotlib.pyplot as plt
 import pandas as pd
 import enum
+from windrose import WindroseAxes #pip install windrose
 
 class Measurement(enum.Enum):
   Air_temp = "air_temperature"
@@ -72,21 +73,7 @@ def get_measurements(measurements : list(Measurement), station : str, start_time
 
 
 #generate chart
-def generate_chart_singleSeries(measurement : Measurement, station : str, start_time : str, showPlot = False, imagePath = None):
-  """
-  generate and show/save plot
-  """
-  
-  df = get_measurement(measurement, station, start_time)
-
-  df.plot(x = "time", y = measurement.value)
-
-  if showPlot:
-    plt.show()
-  else:
-    plt.savefig(imagePath)
-
-def generate_chart_multibleSeries(measurements : list(Measurement), station : str, start_time : str, showPlot = False, imagePath = None):
+def generate_spline(measurements : list(Measurement), station : str, start_time : str, showPlot = False, imagePath = None):
   """
   generate and show/save plot
   """
@@ -95,10 +82,60 @@ def generate_chart_multibleSeries(measurements : list(Measurement), station : st
 
   df.plot(x = "time", y = [measurement.value for measurement in measurements])
 
+  #plt.plot(x = df["time"].values, y = df[[measurement.value for measurement in measurements]].values)
+
   if showPlot:
     plt.show()
   else:
     plt.savefig(imagePath)
 
+def generate_plot_vector(measurements : list(tuple((Measurement, tuple((str, str, str))))), station : str, start_time : str, showPlot = False, imagePath = None):
+  """
+  generiere vektor aus plots mit x Zeilen, Params: (measurements: liste aus Messungen und deren Einheiten tuple(name z.B. Temperatur, Formelzeichen: T, einheit: °C), station: stationsname, 
+                                                            start_time: startzeit der Messungen z.B. 1d, showPlot: true -> plotte | false -> generiere image, imagepath: speicherpfad des images)
+  """
+
+  if len(measurements) <= 1:
+    raise Exception("Es müssen mindestens 2 measurements angegeben werden!")
+
+  df = get_measurements([measurement[0] for measurement in measurements], station, start_time)
+
+  fig, axs = plt.subplots(len(measurements), 1, sharex=True)
+
+  for i, measurement in enumerate(measurements):
+    measurement_type = measurement[0]
+    unit_name = measurement[1][0]
+    unit_symbol = measurement[1][1]
+    unit = measurement[1][2]
+
+    print(unit_name)
+    print(unit)
+
+    axs[i].plot(df["time"].values, df[measurement_type.value].values)
+    axs[i].set(xlabel = "time", ylabel = f"{unit_name} {unit_symbol} in {unit}")
+    axs[i].legend([unit_name])
+
+  if showPlot:
+    plt.show()
+  else:
+    plt.savefig(imagePath)
+
+def generate_windRose(station : str, start_time : str, showPlot = False, imagePath = None):
+  """
+  generiere eine windrose, Params: (station: stationsname, start_time: startzeit der Messungen z.B. 1d, showPlot: true -> plotte | false -> generiere image, imagepath: speicherpfad des images))
+  """
+
+
+  df = get_measurements([Measurement.Wind_direction, Measurement.Wind_speed_avg_10min], station, start_time)
+
+  ax = WindroseAxes.from_ax()
+  ax.bar(df["wind_direction"].values, df["wind_speed_avg_10min"].values, normed = True, opening = 0.8, edgecolor = "white")
+  ax.set_legend()
+
+  if showPlot:
+    plt.show()
+  else:
+    plt.savefig(imagePath)
+  
 if __name__ == '__main__':
   pass
