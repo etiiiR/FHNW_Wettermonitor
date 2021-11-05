@@ -10,7 +10,7 @@ app = Flask(__name__)
 influx_db = InfluxDB(app=app)
 ui = FlaskUI(app, fullscreen=False, width=600, height=500, start_server='flask')
 
-data = ["Apple", "Banana", "Mangoes", "Grapes", "Kiwi", "Orange"]
+
 
 def create_weather_chart():
     #todo save a IMAGE of the Weather in the Images Folder
@@ -22,7 +22,6 @@ def get_weather_store_in_data(data):
 
 def update_data():
     print('Update Data from database')
-    data.append("Data")
 
 
 def get_data_continuesly():
@@ -38,10 +37,20 @@ def get_data():
 @app.route("/")
 def hello():
     # todoo check if the database has old data if yes then update it and afterwards load the homepage
+    wetter = weatherimport.get_measurement(weatherimport.Measurement.Air_temp, "mythenquai", "1d")
+    dict_time = wetter.sort_values(by=['time'])
+    obj_air_temp = dict_time['air_temperature'][0]
+
+    df_humidty= weatherimport.get_measurement(weatherimport.Measurement.Humidity, "mythenquai", "1d")
+    sorted_hum = df_humidty.sort_values(by=['time'])
+    obj_hum = sorted_hum['humidity'][0]
+
+    icon_url = ""
+    
     context = {
-	    'fruits' : data,
+	    'Lufttemp' : obj_air_temp,
 	}  
-    return render_template('index.html' , fruits = data)
+    return render_template('index.html' , Lufttemp = obj_air_temp, Humidity = obj_hum, icon = icon_url)
 
 @app.route("/home", methods=['GET'])
 def home():
