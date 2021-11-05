@@ -246,6 +246,7 @@ def import_latest_data(config, periodic_read = False, callback = update.update_d
     Parameters:
     config (Config): The Config containing the DB connection info
     periodic_read (bool): Defines if the function should keep reading after it imported the latest data (blocking through a sleep)
+    callback (function): will be executed, when new data is uploaded to database
 
    """
     # access API for current data
@@ -333,7 +334,13 @@ def import_latest_data(config, periodic_read = False, callback = update.update_d
 
 def get_entries(config, station, start_time : str, stop_time : str = None) -> pd.DataFrame:
     """
-    query all fields and key from station, start_time: [x]y, [x]d, [x]h, [x]m, [x]s
+    query all fields from station in a specific time range -> today to specific time in the past / specific time in the past to specific time in the past
+
+    Parameters:
+    config (Config): The Config containing the DB connection info
+    station (string): station name
+    start_time (str / dateTime): start time of data as string [1d, 1m, 1w...] or dateTime -> only if stop_time != None
+    stop_time (dateTime -> default: None): specifies end time 
     """
     if not stop_time: #if stop_time not defined
         query = f'SELECT * FROM {station} WHERE time > now() - {start_time}'
@@ -347,7 +354,14 @@ def get_entries(config, station, start_time : str, stop_time : str = None) -> pd
 
 def get_attr_entries(config, attribute, station, start_time : str, stop_time : str = None) -> pd.DataFrame:
     """
-    query attribute from station, start_time: [x]y, [x]d, [x]h, [x]m, [x]s
+    query a specific field from station in a specific time range -> today to specific time in the past / specific time in the past to specific time in the past
+
+    Parameters:
+    config (Config): The Config containing the DB connection info
+    attribute (string): field name
+    station (string): station name
+    start_time (str / dateTime): start time of data as string [1d, 1m, 1w...] or dateTime -> only if stop_time != None
+    stop_time (dateTime -> default: None): specifies end time 
     """
     if not stop_time: #if stop_time not defined
         query = f'SELECT {attribute} FROM {station} WHERE time > now() - {start_time}'
@@ -362,7 +376,14 @@ def get_attr_entries(config, attribute, station, start_time : str, stop_time : s
 
 def get_multible_attr_entries(config, attributes, station, start_time : str, stop_time : str = None) -> pd.DataFrame:
     """
-    query attributes from station, start_time: [x]y, [x]d, [x]h, [x]m, [x]s
+    query specific fields from station in a specific time range -> today to specific time in the past / specific time in the past to specific time in the past
+
+    Parameters:
+    config (Config): The Config containing the DB connection info
+    attributes (list of string): field names
+    station (string): station name
+    start_time (str / dateTime): start time of data as string [1d, 1m, 1w...] or dateTime -> only if stop_time != None
+    stop_time (dateTime -> default: None): specifies end time 
     """
 
     if not stop_time: #if stop_time not defined

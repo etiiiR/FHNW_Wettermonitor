@@ -53,7 +53,12 @@ def _get_fmt(axis): #from https://stackoverflow.com/questions/49106889/get-the-d
 #get entries
 def get_all_measurements(station : str, time_range, timeFilling = True):
   """
-  get all entries in a specific time range (now - start_time / (datetime_start, datetime_stop)) and fill up missing timeSteps with NaN (can be disabled)
+  get all entries in a specific time range 
+
+  Parameters:
+  station (string): station name
+  time_range (string or tuple of dateTime): timerange as string -> now to specific time in the past [1d, 2w, 5m...], timerage as tuple -> specific time in the pas to specific time in the past [tuple(dateTime, dateTime)]
+  timeFilling (bool -> default: True): fill up missing measurements with NaN
   """
 
   if type(time_range) is tuple:
@@ -76,7 +81,13 @@ def get_all_measurements(station : str, time_range, timeFilling = True):
 
 def get_measurement(measurment : Measurement, station : str, time_range, timeFilling = True):
   """
-  get single measurement in a specific time range (now - start_time / (datetime_start, datetime_stop)) and fill up missing timeSteps with NaN (can be disabled)
+  get a specific entry in a specific time range 
+
+  Parameters:
+  measurement (Measurement): select measurement from Measurement [Measurement.air_temp, ...]
+  station (string): station name
+  time_range (string or tuple of dateTime): timerange as string -> now to specific time in the past [1d, 2w, 5m...], timerage as tuple -> specific time in the pas to specific time in the past [tuple(dateTime, dateTime)]
+  timeFilling (bool -> default: True): fill up missing measurements with NaN
   """
 
   if type(time_range) is tuple:
@@ -98,7 +109,13 @@ def get_measurement(measurment : Measurement, station : str, time_range, timeFil
 
 def get_measurements(measurements : list(Measurement), station : str, time_range, timeFilling = True):
   """
-  get multible measurements in a specific time range (now - start_time / (datetime_start, datetime_stop)) and fill up missing timeSteps with NaN (can be disabled)
+  get a specific entries in a specific time range 
+
+  Parameters:
+  measurements (list(Measurement)): select measurements from Measurement [list(Measurement.air_temp, ...)]
+  station (string): station name
+  time_range (string or tuple of dateTime): timerange as string -> now to specific time in the past [1d, 2w, 5m...], timerage as tuple -> specific time in the pas to specific time in the past [tuple(dateTime, dateTime)]
+  timeFilling (bool -> default: True): fill up missing measurements with NaN
   """
 
   if type(time_range) is tuple:
@@ -122,7 +139,15 @@ def get_measurements(measurements : list(Measurement), station : str, time_range
 #generate chart
 def generate_spline(measurements : list(Measurement), station : str, time_range, ylabel_name : str, showPlot = False, imagePath = None):
   """
-  generate and show/save plot (missing time -> fill with NaN)
+  create single or multible splines from a specific time range in one chart
+
+  Parameters:
+  measurements (list(Measurement)): select measurements from Measurement [list(Measurement.air_temp, ...)]
+  station (string): station name
+  time_range (string or tuple of dateTime): timerange as string -> now to specific time in the past [1d, 2w, 5m...], timerage as tuple -> specific time in the pas to specific time in the past [tuple(dateTime, dateTime)]
+  ylabel_name (string): label name of y axis
+  showPlot (bool -> default: False): for debugging -> True: instead of creating an image, plot it directli
+  imagePath (string): path to image to save
   """
 
   df = get_measurements(measurements, station, time_range)
@@ -139,8 +164,14 @@ def generate_spline(measurements : list(Measurement), station : str, time_range,
 
 def generate_plot_colMatrix(measurements : list(tuple((Measurement, tuple((str, str, str))))), station : str, time_range, showPlot = False, imagePath = None):
   """
-  generiere vektor aus plots mit x Zeilen (missing time -> fill with NaN), Params: (measurements: liste aus Messungen und deren Einheiten tuple(name z.B. Temperatur, Formelzeichen: T, einheit: °C), station: stationsname, 
-                                                            start_time: startzeit der Messungen z.B. 1d, showPlot: true -> plotte | false -> generiere image, imagepath: speicherpfad des images) 
+  create splines aligned vertically
+
+  Parameters:
+  measurements (list(tuple(Measurement, tuple(string, string, string)))): select measurements from Measurement and specify name, formula sign and unit [list(tuple(Measurement.air_temp, tuple(Temperatur, T, °C)), ...)]
+  station (string): station name
+  time_range (string or tuple of dateTime): timerange as string -> now to specific time in the past [1d, 2w, 5m...], timerage as tuple -> specific time in the pas to specific time in the past [tuple(dateTime, dateTime)]
+  showPlot (bool -> default: False): for debugging -> True: instead of creating an image, plot it directli
+  imagePath (string): path to image to save
   """
 
   if len(measurements) <= 1:
@@ -170,8 +201,14 @@ def generate_plot_colMatrix(measurements : list(tuple((Measurement, tuple((str, 
 
 def generate_plot_rowMatrix(measurements : list(tuple((Measurement, tuple((str, str, str))))), station : str, time_range, showPlot = False, imagePath = None):
   """
-  generiere Zeilenmatrix aus plots mit x Spalten (missing time -> fill with NaN), Params: (measurements: liste aus Messungen und deren Einheiten tuple(name z.B. Temperatur, Formelzeichen: T, einheit: °C), station: stationsname, 
-                                                            start_time: startzeit der Messungen z.B. 1d, showPlot: true -> plotte | false -> generiere image, imagepath: speicherpfad des images) 
+  create splines aligned horizontally
+
+  Parameters:
+  measurements (list(tuple(Measurement, tuple(string, string, string)))): select measurements from Measurement and specify name, formula sign and unit [list(tuple(Measurement.air_temp, tuple(Temperatur, T, °C)), ...)]
+  station (string): station name
+  time_range (string or tuple of dateTime): timerange as string -> now to specific time in the past [1d, 2w, 5m...], timerage as tuple -> specific time in the pas to specific time in the past [tuple(dateTime, dateTime)]
+  showPlot (bool -> default: False): for debugging -> True: instead of creating an image, plot it directli
+  imagePath (string): path to image to save
   """
 
   if len(measurements) <= 1:
@@ -201,7 +238,13 @@ def generate_plot_rowMatrix(measurements : list(tuple((Measurement, tuple((str, 
 
 def generate_windRose(station : str, time_range, showPlot = False, imagePath = None):
   """
-  generiere eine windrose (missing time -> wird ignoriert), Params: (station: stationsname, start_time: startzeit der Messungen z.B. 1d, showPlot: true -> plotte | false -> generiere image, imagepath: speicherpfad des images))
+  create splines aligned horizontally
+
+  Parameters:
+  station (string): station name
+  time_range (string or tuple of dateTime): timerange as string -> now to specific time in the past [1d, 2w, 5m...], timerage as tuple -> specific time in the pas to specific time in the past [tuple(dateTime, dateTime)]
+  showPlot (bool -> default: False): for debugging -> True: instead of creating an image, plot it directli
+  imagePath (string): path to image to save
   """
 
 
