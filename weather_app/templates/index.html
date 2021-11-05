@@ -20,14 +20,14 @@
                 <p>Wind</p>
                 <h2>Air Temperatur:{{Lufttemp}}</h2>
                 <h2>Air Humidity:{{Humidity}}</h2>
-                <img src= {{ url_for('static', filename = 'Images/weather/rain.png') }} width="64" height="64" alt="previous" title="Previous" border="0">
+                <img src= {{ url_for('static', filename = 'Images/weather/'+icon_wind ) }} width="64" height="64" alt="previous" title="Previous" border="0">
             </div>
             
             <div class="cell flex-align-self-end">
                 <p>Temperatur</p>
                 <h2>Air Temperatur:{{Lufttemp}}</h2>
                 <h2>Air Humidity:{{Humidity}}</h2>
-                <img src= {{ url_for('static', filename = 'Images/weather/rain.png') }} width="64" height="64" alt="previous" title="Previous" border="0">
+                <img src= {{ url_for('static', filename = 'Images/weather/'+icon_temp ) }} width="64" height="64" alt="previous" title="Previous" border="0">
             </div>
         </div>
         
@@ -36,14 +36,14 @@
                 <p>Water</p>
                 <h2>Air Temperatur:{{Lufttemp}}</h2>
                 <h2>Air Humidity:{{Humidity}}</h2>
-                <img src= {{ url_for('static', filename = 'Images/weather/rain.png') }} width="64" height="64" alt="previous" title="Previous" border="0">
+                <img src= {{ url_for('static', filename = 'Images/weather/'+icon_water ) }} width="64" height="64" alt="previous" title="Previous" border="0">
             </div>
             
             <div class="cell flex-align-self-end">
                 <p>Warnings</p>
                 <h2>Air Temperatur:{{Lufttemp}}</h2>
                 <h2>Air Humidity:{{Humidity}}</h2>
-                <img src= {{ url_for('static', filename = 'Images/weather/rain.png') }} width="64" height="64" alt="previous" title="Previous" border="0">
+                <img src= {{ url_for('static', filename = 'Images/weather/'+icon_pred ) }} width="64" height="64" alt="previous" title="Previous" border="0">
             </div>
         </div>
     </div>
@@ -51,7 +51,7 @@
 
 
     <footer id="footer">
-        <a href="\home" class="button large dark">Go home</a>
+        <a href="\home" data-role="ripple" data-ripple-target="footer" class="button large dark">Go home</a>
     </footer>
 
     

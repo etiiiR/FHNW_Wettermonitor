@@ -45,12 +45,16 @@ def hello():
     sorted_hum = df_humidty.sort_values(by=['time'])
     obj_hum = sorted_hum['humidity'][0]
 
-    icon_url = ""
+    icon_url1 = "rain.png"
+    icon_url2 = "sun.png"
+    icon_url3 = "windy.png"
+    icon_url4 = "weather.png"
     
     context = {
 	    'Lufttemp' : obj_air_temp,
 	}  
-    return render_template('index.html' , Lufttemp = obj_air_temp, Humidity = obj_hum, icon = icon_url)
+    return render_template('index.html' , Lufttemp = obj_air_temp, Humidity = obj_hum, icon_temp = icon_url4,
+    icon_wind = icon_url1, icon_pred = icon_url2, icon_water = icon_url3)
 
 @app.route("/home", methods=['GET'])
 def home():
