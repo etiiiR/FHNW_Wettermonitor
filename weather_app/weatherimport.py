@@ -1,4 +1,5 @@
 from os import path
+from time import time
 
 from numpy import dsplit
 import weatherdata as wd
@@ -50,12 +51,20 @@ def _get_fmt(axis): #from https://stackoverflow.com/questions/49106889/get-the-d
     return fmt
 
 #get entries
-def get_all_measurements(station : str, start_time : str, timeFilling = True):
+def get_all_measurements(station : str, time_range, timeFilling = True):
   """
-  get all entries in a specific time range (now - start_time) and fill up missing timeSteps with NaN (can be disabled)
+  get all entries in a specific time range (now - start_time / (datetime_start, datetime_stop)) and fill up missing timeSteps with NaN (can be disabled)
   """
 
-  df = wd.get_entries(config, station, start_time)
+  if type(time_range) is tuple:
+    df = wd.get_entries(config, station, start_time = time_range[0], stop_time = time_range[1])
+
+  elif type(time_range) is str:
+    df = wd.get_entries(config, station, time_range)
+
+  else:
+    raise Exception("time_range has to be a string or a tuple")
+
 
   if timeFilling:
     df = df.resample("10min").asfreq()#resample (zeitlücken mit NaN füllen)
@@ -65,12 +74,19 @@ def get_all_measurements(station : str, start_time : str, timeFilling = True):
 
   return df
 
-def get_measurement(measurment : Measurement, station : str, start_time : str, timeFilling = True):
+def get_measurement(measurment : Measurement, station : str, time_range, timeFilling = True):
   """
-  get single measurement in a specific time range (now - start_time) and fill up missing timeSteps with NaN (can be disabled)
+  get single measurement in a specific time range (now - start_time / (datetime_start, datetime_stop)) and fill up missing timeSteps with NaN (can be disabled)
   """
 
-  df = wd.get_attr_entries(config, str(measurment.value), station, start_time)
+  if type(time_range) is tuple:
+    df = wd.get_attr_entries(config, str(measurment.value), station, start_time = time_range[0], stop_time = time_range[1])
+
+  elif type(time_range) is str:
+    df = wd.get_attr_entries(config, str(measurment.value), station, time_range)
+
+  else:
+    raise Exception("time_range has to be a string or a tuple")
 
   if timeFilling:
     df = df.resample("10min").asfreq()#resample (zeitlücken mit NaN füllen)
@@ -80,13 +96,20 @@ def get_measurement(measurment : Measurement, station : str, start_time : str, t
 
   return df
 
-def get_measurements(measurements : list(Measurement), station : str, start_time : str, timeFilling = True):
+def get_measurements(measurements : list(Measurement), station : str, time_range, timeFilling = True):
   """
-  get multible measurements in a specific time range (now - start_time) and fill up missing timeSteps with NaN (can be disabled)
+  get multible measurements in a specific time range (now - start_time / (datetime_start, datetime_stop)) and fill up missing timeSteps with NaN (can be disabled)
   """
 
-  df = wd.get_multible_attr_entries(config, [measurement.value for measurement in measurements], station, start_time)
-  
+  if type(time_range) is tuple:
+    df = wd.get_multible_attr_entries(config, [measurement.value for measurement in measurements], station, start_time = time_range[0], stop_time = time_range[1])
+
+  elif type(time_range) is str:
+    df = wd.get_multible_attr_entries(config, [measurement.value for measurement in measurements], station, time_range)
+
+  else:
+    raise Exception("time_range has to be a string or a tuple")
+
   if timeFilling:
     df = df.resample("10min").asfreq()#resample (zeitlücken mit NaN füllen)
   
@@ -97,12 +120,12 @@ def get_measurements(measurements : list(Measurement), station : str, start_time
 
 
 #generate chart
-def generate_spline(measurements : list(Measurement), station : str, start_time : str, ylabel_name : str, showPlot = False, imagePath = None):
+def generate_spline(measurements : list(Measurement), station : str, time_range, ylabel_name : str, showPlot = False, imagePath = None):
   """
   generate and show/save plot (missing time -> fill with NaN)
   """
 
-  df = get_measurements(measurements, station, start_time)
+  df = get_measurements(measurements, station, time_range)
 
   df.plot(x = "time", y = [measurement.value for measurement in measurements])
 
@@ -114,7 +137,7 @@ def generate_spline(measurements : list(Measurement), station : str, start_time 
   else:
     plt.savefig(imagePath, bbox_inches='tight')
 
-def generate_plot_colMatrix(measurements : list(tuple((Measurement, tuple((str, str, str))))), station : str, start_time : str, showPlot = False, imagePath = None):
+def generate_plot_colMatrix(measurements : list(tuple((Measurement, tuple((str, str, str))))), station : str, time_range, showPlot = False, imagePath = None):
   """
   generiere vektor aus plots mit x Zeilen (missing time -> fill with NaN), Params: (measurements: liste aus Messungen und deren Einheiten tuple(name z.B. Temperatur, Formelzeichen: T, einheit: °C), station: stationsname, 
                                                             start_time: startzeit der Messungen z.B. 1d, showPlot: true -> plotte | false -> generiere image, imagepath: speicherpfad des images) 
@@ -123,7 +146,7 @@ def generate_plot_colMatrix(measurements : list(tuple((Measurement, tuple((str, 
   if len(measurements) <= 1:
     raise Exception("Es müssen mindestens 2 measurements angegeben werden!")
 
-  df = get_measurements([measurement[0] for measurement in measurements], station, start_time)
+  df = get_measurements([measurement[0] for measurement in measurements], station, time_range)
 
   fig, axs = plt.subplots(len(measurements), 1)
 
@@ -145,7 +168,7 @@ def generate_plot_colMatrix(measurements : list(tuple((Measurement, tuple((str, 
   else:
     plt.savefig(imagePath, bbox_inches='tight')
 
-def generate_plot_rowMatrix(measurements : list(tuple((Measurement, tuple((str, str, str))))), station : str, start_time : str, showPlot = False, imagePath = None):
+def generate_plot_rowMatrix(measurements : list(tuple((Measurement, tuple((str, str, str))))), station : str, time_range, showPlot = False, imagePath = None):
   """
   generiere Zeilenmatrix aus plots mit x Spalten (missing time -> fill with NaN), Params: (measurements: liste aus Messungen und deren Einheiten tuple(name z.B. Temperatur, Formelzeichen: T, einheit: °C), station: stationsname, 
                                                             start_time: startzeit der Messungen z.B. 1d, showPlot: true -> plotte | false -> generiere image, imagepath: speicherpfad des images) 
@@ -154,7 +177,7 @@ def generate_plot_rowMatrix(measurements : list(tuple((Measurement, tuple((str, 
   if len(measurements) <= 1:
     raise Exception("Es müssen mindestens 2 measurements angegeben werden!")
 
-  df = get_measurements([measurement[0] for measurement in measurements], station, start_time)
+  df = get_measurements([measurement[0] for measurement in measurements], station, time_range)
 
   fig, axs = plt.subplots(1, len(measurements))
 
@@ -176,13 +199,13 @@ def generate_plot_rowMatrix(measurements : list(tuple((Measurement, tuple((str, 
   else:
     plt.savefig(imagePath, bbox_inches='tight')
 
-def generate_windRose(station : str, start_time : str, showPlot = False, imagePath = None):
+def generate_windRose(station : str, time_range, showPlot = False, imagePath = None):
   """
   generiere eine windrose (missing time -> wird ignoriert), Params: (station: stationsname, start_time: startzeit der Messungen z.B. 1d, showPlot: true -> plotte | false -> generiere image, imagepath: speicherpfad des images))
   """
 
 
-  df = get_measurements([Measurement.Wind_direction, Measurement.Wind_speed_avg_10min], station, start_time, timeFilling = False)
+  df = get_measurements([Measurement.Wind_direction, Measurement.Wind_speed_avg_10min], station, time_range, timeFilling = False)
 
   ax = WindroseAxes.from_ax()
   ax.bar(df["wind_direction"].values, df["wind_speed_avg_10min"].values, normed = True, opening = 0.8, edgecolor = "white")

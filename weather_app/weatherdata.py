@@ -26,7 +26,9 @@ import os
 import threading
 from collections import deque
 from requests.models import HTTPError
+from datetime import datetime
 import main as update
+
 
 class Config:
     db_host = 'localhost' #database host
@@ -329,32 +331,46 @@ def import_latest_data(config, periodic_read = False, callback = update.update_d
         if first_cycle:
             first_cycle = False
 
-def get_entries(config, station, start_time : str) -> pd.DataFrame:
+def get_entries(config, station, start_time : str, stop_time : str = None) -> pd.DataFrame:
     """
     query all fields and key from station, start_time: [x]y, [x]d, [x]h, [x]m, [x]s
     """
+    if not stop_time: #if stop_time not defined
+        query = f'SELECT * FROM {station} WHERE time > now() - {start_time}'
 
-    query = f'SELECT * FROM {station} WHERE time > now() - {start_time}'
+    else:
+        query = f'SELECT * FROM {station} WHERE time >= \'{start_time.strftime("%Y-%m-%dT%H:%M:%SZ")}\' AND time <= \'{stop_time.strftime("%Y-%m-%dT%H:%M:%SZ")}\''
+
     answer = config.client.query(query) #query entries -> dictionary
     val = answer.get(station, None) #get pd.dataframe from key "station", return "None" if key not found
     return val
 
-def get_attr_entries(config, attribute, station, start_time : str) -> pd.DataFrame:
+def get_attr_entries(config, attribute, station, start_time : str, stop_time : str = None) -> pd.DataFrame:
     """
     query attribute from station, start_time: [x]y, [x]d, [x]h, [x]m, [x]s
     """
+    if not stop_time: #if stop_time not defined
+        query = f'SELECT {attribute} FROM {station} WHERE time > now() - {start_time}'
 
-    query = f'SELECT {attribute} FROM {station} WHERE time > now() - {start_time}'
+    else:
+        query = f'SELECT {attribute} FROM {station} WHERE time >= \'{start_time.strftime("%Y-%m-%dT%H:%M:%SZ")}\' AND time <= \'{stop_time.strftime("%Y-%m-%dT%H:%M:%SZ")}\''
+
+    
     answer = config.client.query(query) #query entries -> dictionary
     val = answer.get(station, None) #get pd.dataframe from key "station", return "None" if key not found
     return val
 
-def get_multible_attr_entries(config, attributes, station, start_time : str) -> pd.DataFrame:
+def get_multible_attr_entries(config, attributes, station, start_time : str, stop_time : str = None) -> pd.DataFrame:
     """
     query attributes from station, start_time: [x]y, [x]d, [x]h, [x]m, [x]s
     """
 
-    query = f'SELECT {",".join(attributes)} FROM {station} WHERE time > now() - {start_time}'
+    if not stop_time: #if stop_time not defined
+        query = f'SELECT {",".join(attributes)} FROM {station} WHERE time > now() - {start_time}'
+
+    else:
+        query = f'SELECT {",".join(attributes)} FROM {station} WHERE time >= \'{start_time.strftime("%Y-%m-%dT%H:%M:%SZ")}\' AND time <= \'{stop_time.strftime("%Y-%m-%dT%H:%M:%SZ")}\''
+    
     answer = config.client.query(query) #query entries -> dictionary
     val = answer.get(station, None) #get pd.dataframe from key "station", return "None" if key not found
     return val
