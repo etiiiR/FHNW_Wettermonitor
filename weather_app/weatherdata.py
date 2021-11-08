@@ -73,6 +73,9 @@ def __get_last_db_entry(config, station):
         # speedup for Raspberry Pi - last entry query takes > 2 Sec.!
         last_entry = config.stations_last_entries.get(station, None) #get entry for "station"
 
+        if not last_entry:
+            print("Warning! Database is empty...")
+
     if last_entry is None: #if no entry found or force query last entry enabled
         try:
             # we are only interested in time, however need to provide any field to make query work
@@ -169,13 +172,14 @@ def __clean_data(config, data_of_last_day, last_db_entry, station):
     normalized = __define_types(normalized, '%d.%m.%Y %H:%M:%S')
 
     # remove all entries older than last element
-    last_db_entry_time = None
-    if isinstance(last_db_entry, pd.DataFrame):
-        last_db_entry_time = last_db_entry
-    elif isinstance(last_db_entry, dict):
-        last_db_entry_time = last_db_entry.get(station, None)
-    last_db_entry_time = last_db_entry_time.index[0].replace(tzinfo = None)
-    normalized.drop(normalized[normalized.index <= last_db_entry_time].index, inplace = True)
+    if last_db_entry: #if database isn't empty
+        last_db_entry_time = None
+        if isinstance(last_db_entry, pd.DataFrame):
+            last_db_entry_time = last_db_entry
+        elif isinstance(last_db_entry, dict):
+            last_db_entry_time = last_db_entry.get(station, None)
+        last_db_entry_time = last_db_entry_time.index[0].replace(tzinfo = None)
+        normalized.drop(normalized[normalized.index <= last_db_entry_time].index, inplace = True)
 
     return normalized
 
@@ -219,10 +223,14 @@ def try_import_csv_file(config, station, file_name):
     config (Config): The Config containing the DB connection info
     station (String): Either 'Mythenquai' or 'Tiefenbrunnen'
     file_name (String): Path to the file from which the data shall be imported
+
+    Returns:
+    True: If csv already importet or csv successfully importet
+    False: CSV failed to import (csv file not found)
     """
     if __is_csv_imported(config, station):
         print(file_name + ' already imported.')
-        return
+        return True
 
     if os.path.isfile(file_name): #does the path point to a file?
         print('\tLoad ' + file_name)
@@ -230,8 +238,11 @@ def try_import_csv_file(config, station, file_name):
             chunk = __define_types(chunk, '%Y-%m-%dT%H:%M:%S') #preprocess data
             print('Add ' + station + ' from ' + str(chunk.index[0]) + ' to ' + str(chunk.index[-1]))
             __add_data_to_db(config, chunk, station) #add data to database
+
+        return True
     else:
         print(file_name + ' does not seem to exist.')
+        return False
 
 
 def __is_csv_imported(config, station):
