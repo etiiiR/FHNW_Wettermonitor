@@ -26,21 +26,14 @@ def update_data():
 def get_data_continuesly():
     weatherimport.read_data_continuesly()
 
-def init_dataBase():
-    if weatherimport.init():
-        t=threading.Thread(target=get_data_continuesly)
-        t.start()
-
 @app.before_first_request
 def get_data():
-    print("GetData")
-    i = threading.Thread(target = init_dataBase)
-    i.start()
+    t=threading.Thread(target=get_data_continuesly)
+    t.start()
         
 @app.route("/")
 def hello():
-    print(weatherimport.systemInitialized())
-    if weatherimport.systemInitialized():
+    if weatherimport.systemInitialized:
         # todoo check if the database has old data if yes then update it and afterwards load the homepage
         wetter = weatherimport.get_measurement(weatherimport.Measurement.Air_temp, "mythenquai", "1d")
         dict_time = wetter.sort_values(by=['time'])
@@ -73,5 +66,6 @@ def home():
 
 
 if __name__ == "__main__":
+    weatherimport.init()
     ui.run()
     
