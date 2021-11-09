@@ -23,6 +23,9 @@ class Measurement(enum.Enum):
 config = wd.Config()
 systemInitialized = False #True if database successfully initialized 
 
+def systemInitialized():
+  return systemInitialized
+
 def init():
   """
   connect to db, import historic data if not imported, import latest data (no periodic read)
@@ -34,12 +37,12 @@ def init():
     wd.import_latest_data(config, periodic_read=False)
     print("Database successfully initialized.")
     systemInitialized = True
-    return True
+    return systemInitialized
 
   else:
     print("Database partially initialized... Database working but CSV file not importet!!!")
     systemInitialized = False
-    return False
+    return systemInitialized
   
 
 
