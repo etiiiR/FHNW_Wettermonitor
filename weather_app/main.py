@@ -29,9 +29,12 @@ def get_data_continuesly():
 
 @app.before_first_request
 def get_data():
-    weatherimport.init()
-    t=threading.Thread(target=get_data_continuesly)
-    t.start()
+    if weatherimport.init():
+        t=threading.Thread(target=get_data_continuesly)
+        t.start()
+        
+    else:
+        print("Periodic read not startet yet!")
     return
 
 @app.route("/")

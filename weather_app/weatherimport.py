@@ -1,11 +1,11 @@
-from os import path
+import os
 from time import time
-
 from numpy import dsplit
 import weatherdata as wd
 import matplotlib.pyplot as plt
 import pandas as pd
 import enum
+from pathlib import Path
 from windrose import WindroseAxes #pip install windrose
 
 class Measurement(enum.Enum):
@@ -26,14 +26,16 @@ def init():
   """
   connect to db, import historic data if not imported, import latest data (no periodic read)
   """
-
+  
   wd.connect_db(config)
 
-  if wd.try_import_csv_file(config, 'mythenquai', '../Messwerte/messwerte_mythenquai_2007-2020.csv') and wd.try_import_csv_file(config, 'tiefenbrunnen', '../Messwerte/messwerte_tiefenbrunnen_2007-2020.csv'):
+  if wd.try_import_csv_file(config, 'mythenquai', Path(os.path.dirname(os.path.realpath(__file__))).parent + "/Messwerte/messwerte_mythenquai_2007-2020.csv") and wd.try_import_csv_file(config, 'tiefenbrunnen', Path(os.path.dirname(os.path.realpath(__file__))).parent + "/Messwerte/messwerte_tiefenbrunnen_2007-2020.csv"):
     wd.import_latest_data(config, periodic_read=False)
+    return True
 
   else:
     print("Database partially initialized... Database working but CSV file not importet!!!")
+    return False
   
 
 
