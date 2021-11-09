@@ -39,7 +39,8 @@ def get_data():
         
 @app.route("/")
 def hello():
-    if weatherimport.systemInitialized:
+    print(weatherimport.systemInitialized())
+    if weatherimport.systemInitialized():
         # todoo check if the database has old data if yes then update it and afterwards load the homepage
         wetter = weatherimport.get_measurement(weatherimport.Measurement.Air_temp, "mythenquai", "1d")
         dict_time = wetter.sort_values(by=['time'])
