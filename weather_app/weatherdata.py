@@ -73,9 +73,6 @@ def __get_last_db_entry(config, station):
         # speedup for Raspberry Pi - last entry query takes > 2 Sec.!
         last_entry = config.stations_last_entries.get(station, None) #get entry for "station"
 
-        if not last_entry:
-            print("Warning! Database is empty...")
-
     if last_entry is None: #if no entry found or force query last entry enabled
         try:
             # we are only interested in time, however need to provide any field to make query work
@@ -172,7 +169,7 @@ def __clean_data(config, data_of_last_day, last_db_entry, station):
     normalized = __define_types(normalized, '%d.%m.%Y %H:%M:%S')
 
     # remove all entries older than last element
-    if last_db_entry: #if database isn't empty
+    if last_db_entry is not None: #if database isn't empty
         last_db_entry_time = None
         if isinstance(last_db_entry, pd.DataFrame):
             last_db_entry_time = last_db_entry
