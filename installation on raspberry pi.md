@@ -11,6 +11,8 @@ echo "deb [signed-by=/etc/apt/trusted.gpg.d/influxdb.gpg] https://repos.influxda
 sudo apt-get update && sudo apt-get install influxdb
 sudo service influxdb start
 
+sudo apt install influxdb-client
+
 
 
 
