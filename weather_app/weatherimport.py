@@ -136,7 +136,6 @@ def get_measurements(measurements : list(Measurement), station : str, time_range
 
   elif type(time_range) is str:
     df = wd.get_multible_attr_entries(config, [measurement.value for measurement in measurements], station, time_range)
-
   else:
     raise Exception("time_range has to be a string or a tuple")
 

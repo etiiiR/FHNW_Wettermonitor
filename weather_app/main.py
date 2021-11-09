@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import Flask  
 from flask import render_template
 from flaskwebgui import FlaskUI
@@ -5,13 +6,27 @@ from flaskwebgui import FlaskUI
 from flask_influxdb import InfluxDB
 import weatherimport
 import threading
+from pathlib import Path
+import os
 
 app = Flask(__name__)
 influx_db = InfluxDB(app=app)
-ui = FlaskUI(app, fullscreen=False, width=600, height=500, start_server='flask')
+ui = FlaskUI(app, fullscreen=True, width=600, height=500, start_server='flask')
 
 
 def create_weather_chart():
+    #todays plots
+    weatherimport.generate_plot_colMatrix([(weatherimport.Measurement.Air_temp, ("Temperatur", "T", "°C")), (weatherimport.Measurement.Humidity, ("Luftfeuchtigkeit", "", "%"))], "mythenquai", (datetime.today().date(), datetime.now()), imagePath=str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/Images/Temp_Hum_Today_Mythenquai.png")
+    weatherimport.generate_plot_colMatrix([(weatherimport.Measurement.Air_temp, ("Temperatur", "T", "°C")), (weatherimport.Measurement.Humidity, ("Luftfeuchtigkeit", "", "%"))], "tiefenbrunnen", (datetime.today().date(), datetime.now()), imagePath=str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/Images/Temp_Hum_Today_Tiefenbrunnen.png")
+    weatherimport.generate_windRose("mythenquai", (datetime.today().date(), datetime.now()), imagePath=str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/Images/WindRose_Today_Mythenquai.png")
+    weatherimport.generate_windRose("tiefenbrunnen", (datetime.today().date(), datetime.now()), imagePath=str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/Images/WindRose_Today_Tiefenbrunnen.png")
+
+    #historical plots
+    weatherimport.generate_plot_colMatrix([(weatherimport.Measurement.Air_temp, ("Temperatur", "T", "°C")), (weatherimport.Measurement.Humidity, ("Luftfeuchtigkeit", "", "%"))], "mythenquai", (datetime(2015, 1, 1), datetime.now()), imagePath=str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/Images/Temp_Hum_Hist_Mythenquai.png")
+    weatherimport.generate_plot_colMatrix([(weatherimport.Measurement.Air_temp, ("Temperatur", "T", "°C")), (weatherimport.Measurement.Humidity, ("Luftfeuchtigkeit", "", "%"))], "tiefenbrunnen", (datetime(2015, 1, 1), datetime.now()), imagePath=str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/Images/Temp_Hum_Hist_Tiefenbrunnen.png")
+    weatherimport.generate_windRose("mythenquai", (datetime(2015, 1, 1), datetime.now()), imagePath=str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/Images/WindRose_Hist_Mythenquai.png")
+    weatherimport.generate_windRose("tiefenbrunnen", (datetime(2015, 1, 1), datetime.now()), imagePath=str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/Images/WindRose_Hist_Tiefenbrunnen.png")
+    
     #todo save a IMAGE of the Weather in the Images Folder
     pass
 
@@ -67,5 +82,6 @@ def home():
 
 if __name__ == "__main__":
     weatherimport.init()
+    create_weather_chart()
     ui.run()
     
