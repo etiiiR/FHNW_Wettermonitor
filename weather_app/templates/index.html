@@ -13,53 +13,17 @@
 
 <body data-role="touch">
     <div id='holder' class="p-5">
-    <header></header>
-    <div id='body' class="grid h-100 w-100 mh-100">
-        <div class="row flex-align-start">
-            <div class="cell flex-align-self-start" style='min-height: 33vh; margin-bottom:3vh;'>
-                <p>Wind</p>
-                <h2>Air Temperatur:{{Lufttemp}}</h2>
-                <h2>Air Humidity:{{Humidity}}</h2>
-                <img src= {{ url_for('static', filename = 'Images/weather/'+icon_wind ) }} width="64" height="64" alt="previous" title="Previous" border="0">
-            </div>
-            
-            <div class="cell flex-align-self-end">
-                <p>Temperatur</p>
-                <h2>Air Temperatur:{{Lufttemp}}</h2>
-                <h2>Air Humidity:{{Humidity}}</h2>
-                <img src= {{ url_for('static', filename = 'Images/weather/'+icon_temp ) }} width="64" height="64" alt="previous" title="Previous" border="0">
-            </div>
-        </div>
-        
-        <div class="row flex-align-end">
-            <div class="cell flex-align-self-start">
-                <p>Water</p>
-                <h2>Air Temperatur:{{Lufttemp}}</h2>
-                <h2>Air Humidity:{{Humidity}}</h2>
-                <img src= {{ url_for('static', filename = 'Images/weather/'+icon_water ) }} width="64" height="64" alt="previous" title="Previous" border="0">
-            </div>
-            
-            <div class="cell flex-align-self-end">
-                <p>Warnings</p>
-                <h2>Air Temperatur:{{Lufttemp}}</h2>
-                <h2>Air Humidity:{{Humidity}}</h2>
-                <img src= {{ url_for('static', filename = 'Images/weather/'+icon_pred ) }} width="64" height="64" alt="previous" title="Previous" border="0">
-            </div>
-        </div>
-    </div>
+    <header>
+        <h1>Wetterstation: {{station}}</h1>
+    </header>
 
+    {% include 'content.html' %}
 
-
-    <footer id="footer">
-        <a href="\home" data-role="ripple" data-ripple-target="footer" class="button large dark">Go home</a>
-    </footer>
-
-    
+    {% include 'footer.html' %}
 
     <script src="../static/jquery-3.4.1.min.js"></script>
     <script src="../static/metro.min.js"></script>
     <script src="../static/stop_server.js"></script>
-    
 
 </div>
 </body>

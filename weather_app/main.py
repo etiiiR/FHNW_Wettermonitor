@@ -1,6 +1,7 @@
 from datetime import datetime
 from flask import Flask  
-from flask import render_template
+from flask import render_template, redirect, url_for
+
 from flaskwebgui import FlaskUI
 #https://github.com/btashton/flask-influxdb
 from flask_influxdb import InfluxDB
@@ -45,16 +46,28 @@ def get_data_continuesly():
 def get_data():
     t=threading.Thread(target=get_data_continuesly)
     t.start()
-        
-@app.route("/")
-def hello():
+
+
+@app.route('/')
+def index():
+    return redirect("/mythenquai")
+
+@app.route("/mythenquai")
+def mythenquai():
+    return front_page("mythenquai")
+    
+@app.route("/tiefenbrunnen")
+def tiefenbrunnen():
+    return front_page("tiefenbrunnen")
+
+def front_page(station):
     if weatherimport.systemInitialized():
         # todoo check if the database has old data if yes then update it and afterwards load the homepage
-        wetter = weatherimport.get_measurement(weatherimport.Measurement.Air_temp, "mythenquai", "1d")
+        wetter = weatherimport.get_measurement(weatherimport.Measurement.Air_temp, station, "1d")
         dict_time = wetter.sort_values(by=['time'])
         obj_air_temp = dict_time['air_temperature'][0]
 
-        df_humidty= weatherimport.get_measurement(weatherimport.Measurement.Humidity, "mythenquai", "1d")
+        df_humidty= weatherimport.get_measurement(weatherimport.Measurement.Humidity, station, "1d")
         sorted_hum = df_humidty.sort_values(by=['time'])
         obj_hum = sorted_hum['humidity'][0]
     else:
@@ -69,7 +82,7 @@ def hello():
     context = {
 	    'Lufttemp' : obj_air_temp,
 	}  
-    return render_template('index.html' , Lufttemp = obj_air_temp, Humidity = obj_hum, icon_temp = icon_url4,
+    return render_template('index.html', station = station, Lufttemp = obj_air_temp, Humidity = obj_hum, icon_temp = icon_url4,
     icon_wind = icon_url1, icon_pred = icon_url2, icon_water = icon_url3)
 
 @app.route("/home", methods=['GET'])
