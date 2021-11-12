@@ -82,6 +82,6 @@ def home():
 
 if __name__ == "__main__":
     weatherimport.init()
-    create_weather_chart()
+    #create_weather_chart()
     ui.run()
     
