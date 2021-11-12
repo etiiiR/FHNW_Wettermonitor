@@ -10,13 +10,18 @@ from windrose import WindroseAxes #pip install windrose
 
 class Measurement(enum.Enum):
   Air_temp = "air_temperature"
+  Water_temp = "water_temperature"
   Dew_point = "dew_point"
+  Precipitation = "precipitation"
+  Water_level = "water_level"
+  Pressure = "barometric_pressure_qfe"
   Humidity = "humidity"
   Wind_direction = "wind_direction"
   Wind_force_avg_10min = "wind_force_avg_10min"
   Wind_gust_max_10min = "wind_gust_max_10min"
   Wind_speed_avg_10min = "wind_speed_avg_10min"
   Wind_chill = "windchill"
+  Radiation = "global_radiation"
 
 
 

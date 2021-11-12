@@ -52,10 +52,12 @@ def get_data():
 def index():
     return redirect("/mythenquai")
 
+
 @app.route("/mythenquai")
 def mythenquai():
     return front_page("mythenquai")
-    
+
+
 @app.route("/tiefenbrunnen")
 def tiefenbrunnen():
     return front_page("tiefenbrunnen")
@@ -63,33 +65,32 @@ def tiefenbrunnen():
 def front_page(station):
     if weatherimport.systemInitialized():
         # TODO: check if the database has old data if yes then update it and afterwards load the homepage
-        wetter = weatherimport.get_measurements([weatherimport.Measurement.Air_temp, weatherimport.Measurement.Humidity], station, "1d")
-        wetter = wetter.sort_values(by=['time'])
-        letzte_messung = wetter['time'][0]
-        daten_aktuell = letzte_messung + timedelta(hours=1) < datetime.now(letzte_messung.tzinfo)
-        air_temperature = wetter['air_temperature'][0]
-        humidity = wetter['humidity'][0]
+        measurements = [weatherimport.Measurement.Air_temp,
+                        weatherimport.Measurement.Humidity,
+                        weatherimport.Measurement.Wind_gust_max_10min,
+                        weatherimport.Measurement.Wind_speed_avg_10min,
+                        weatherimport.Measurement.Wind_force_avg_10min,
+                        weatherimport.Measurement.Water_temp,
+                        weatherimport.Measurement.Dew_point,
+                        weatherimport.Measurement.Wind_chill,
+                        weatherimport.Measurement.Precipitation,
+                        weatherimport.Measurement.Water_level,
+                        weatherimport.Measurement.Pressure,
+                        weatherimport.Measurement.Radiation]
+        weather = weatherimport.get_measurements(measurements, station, "1d")
+        weather = weather.sort_values(by=['time'], ascending=False).to_dict("records")[0]
+        weather["minutes_since_last_measurement"] = (datetime.now(weather['time'].tzinfo) - weather['time'])/timedelta(minutes=1)
     else:
+        # TODO set these values in #get_measurements
         letzte_messung = "not available yet"
         air_temperature = "not available yet"
         humidity = "not available yet"
-
-    icon_url1 = "rain.png"
-    icon_url2 = "sun.png"
-    icon_url3 = "windy.png"
-    icon_url4 = "weather.png"
-    # TODO hard code icon urls
     
     return render_template('index.html', 
         station = station,
-        letzte_messung = letzte_messung,
-        daten_aktuell = daten_aktuell,
-        Lufttemp = air_temperature,
-        Humidity = humidity,
-        icon_temp = icon_url4,
-        icon_wind = icon_url1,
-        icon_pred = icon_url2,
-        icon_water = icon_url3)
+        weather = weather
+        )
+
 
 @app.route("/home", methods=['GET'])
 def home():

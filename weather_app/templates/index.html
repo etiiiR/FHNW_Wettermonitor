@@ -13,19 +13,20 @@
 
 <body data-role="touch">
     <div id='holder' class="p-5">
-    <header>
-        <h1>Wetterstation: {{station}}</h1>
-    </header>
+        <header>
+            <ul class="h-menu large">
+                <li><a href="\mythenquai"    class={{ "text-bold" if station == "mythenquai" }}>Mythenquai</a></li>
+                <li><a href="\tiefenbrunnen" class={{ "text-bold" if station == "tiefenbrunnen" }}>Tiefenbrunnen</a></li>
+            </ul>
+        </header>
+                
+        {% include 'content.html' %}
 
-    {% include 'content.html' %}
+        <script src="../static/jquery-3.4.1.min.js"></script>
+        <script src="../static/metro.min.js"></script>
+        <script src="../static/stop_server.js"></script>
 
-    {% include 'footer.html' %}
-
-    <script src="../static/jquery-3.4.1.min.js"></script>
-    <script src="../static/metro.min.js"></script>
-    <script src="../static/stop_server.js"></script>
-
-</div>
+    </div>
 </body>
 
 </html>

@@ -44,6 +44,7 @@ class Config:
         'values.global_radiation.value': 'global_radiation',
         'values.humidity.value': 'humidity',
         'values.precipitation.value': 'precipitation',
+        'values.water_level.value': 'water_level',
         'values.water_temperature.value': 'water_temperature',
         'values.wind_direction.value': 'wind_direction',
         'values.wind_force_avg_10min.value': 'wind_force_avg_10min',
