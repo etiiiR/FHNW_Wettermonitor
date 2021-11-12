@@ -26,7 +26,6 @@ import os
 import threading
 from collections import deque
 from requests.models import HTTPError
-from datetime import datetime
 import main as update
 
 

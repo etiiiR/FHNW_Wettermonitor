@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask  
 from flask import render_template, redirect, url_for
 
@@ -62,35 +62,38 @@ def tiefenbrunnen():
 
 def front_page(station):
     if weatherimport.systemInitialized():
-        # todoo check if the database has old data if yes then update it and afterwards load the homepage
-        wetter = weatherimport.get_measurement(weatherimport.Measurement.Air_temp, station, "1d")
-        dict_time = wetter.sort_values(by=['time'])
-        obj_air_temp = dict_time['air_temperature'][0]
-
-        df_humidty= weatherimport.get_measurement(weatherimport.Measurement.Humidity, station, "1d")
-        sorted_hum = df_humidty.sort_values(by=['time'])
-        obj_hum = sorted_hum['humidity'][0]
+        # TODO: check if the database has old data if yes then update it and afterwards load the homepage
+        wetter = weatherimport.get_measurements([weatherimport.Measurement.Air_temp, weatherimport.Measurement.Humidity], station, "1d")
+        wetter = wetter.sort_values(by=['time'])
+        letzte_messung = wetter['time'][0]
+        daten_aktuell = letzte_messung + timedelta(hours=1) < datetime.now(letzte_messung.tzinfo)
+        air_temperature = wetter['air_temperature'][0]
+        humidity = wetter['humidity'][0]
     else:
-        obj_air_temp = "not available yet"
-        obj_hum = "not available yet"
+        letzte_messung_str = "not available yet"
+        air_temperature = "not available yet"
+        humidity = "not available yet"
 
     icon_url1 = "rain.png"
     icon_url2 = "sun.png"
     icon_url3 = "windy.png"
     icon_url4 = "weather.png"
+    # TODO hard code icon urls
     
-    context = {
-	    'Lufttemp' : obj_air_temp,
-	}  
-    return render_template('index.html', station = station, Lufttemp = obj_air_temp, Humidity = obj_hum, icon_temp = icon_url4,
-    icon_wind = icon_url1, icon_pred = icon_url2, icon_water = icon_url3)
+    return render_template('index.html', 
+        station = station,
+        letzte_messung = letzte_messung,
+        daten_aktuell = daten_aktuell,
+        Lufttemp = air_temperature,
+        Humidity = humidity,
+        icon_temp = icon_url4,
+        icon_wind = icon_url1,
+        icon_pred = icon_url2,
+        icon_water = icon_url3)
 
 @app.route("/home", methods=['GET'])
 def home():
     return render_template('some_page.html')
-
-
-
 
 
 if __name__ == "__main__":

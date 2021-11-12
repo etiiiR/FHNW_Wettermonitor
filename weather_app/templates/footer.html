@@ -1,4 +1,8 @@
 <footer id="footer">
     <a href="\mythenquai"    data-role="ripple" data-ripple-target="footer" class="button large dark">Mythenquai</a>
     <a href="\tiefenbrunnen" data-role="ripple" data-ripple-target="footer" class="button large dark">Tiefenbrunnen</a>
+    <span>Letzte Messung: {{letzte_messung.strftime("%d.%m.%Y %H:%M")}}</span>
+    {% if not daten_aktuell %}
+        <span style="color: red; font-weight: bold;">Daten sind älter als eine Stunde</span>
+    {% endif %}
 </footer>
