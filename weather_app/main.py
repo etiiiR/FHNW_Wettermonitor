@@ -70,7 +70,7 @@ def front_page(station):
         air_temperature = wetter['air_temperature'][0]
         humidity = wetter['humidity'][0]
     else:
-        letzte_messung_str = "not available yet"
+        letzte_messung = "not available yet"
         air_temperature = "not available yet"
         humidity = "not available yet"
 
