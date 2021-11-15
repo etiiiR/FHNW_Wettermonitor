@@ -30,23 +30,15 @@ sudo apt-get update && sudo apt-get install
 ```
 
 ### InfluxDB
-#### InfluxData Repository hinzufügen
 ```bash
-wget -qO- https://repos.influxdata.com/influxdb.key | gpg --dearmor > /etc/apt/trusted.gpg.d/influxdb.gpg
-export DISTRIB_ID=$(lsb_release -si); export DISTRIB_CODENAME=$(lsb_release -sc)
-echo "deb [signed-by=/etc/apt/trusted.gpg.d/influxdb.gpg] https://repos.influxdata.com/${DISTRIB_ID,,} ${DISTRIB_CODENAME} stable" > /etc/apt/sources.list.d/influxdb.list
-```
-
-#### InfluxDB service installieren
-```bash
-sudo apt-get install influxdb
+sudo apt-get update && sudo apt-get install influxdb
 sudo systemctl unmask influxdb.service
 sudo systemctl start influxdb
+
+sudo apt install influxdb-client
 ```
 
-
 ### Python
-
 ```bash
 sudo apt-get update
 sudo apt-get install -y build-essential tk-dev libncurses5-dev libncursesw5-dev libreadline6-dev libdb5.3-dev libgdbm-dev libsqlite3-dev libssl-dev libbz2-dev libexpat1-dev liblzma-dev zlib1g-dev libffi-dev
@@ -66,28 +58,22 @@ rm Python-3.8.8.tar.xz
 
 sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.8 1
 
-
-#upgrade pip
 /usr/bin/python -m pip install --upgrade pip
+
+sudo pip install influxdb
+sudo pip install pandas
 ```
 
 ### Wettermonitor installieren
 ```bash
 git clone https://github.com/etiiiR/FHNW_Wettermonitor.git
 cd FHNW_Wettermonitor
-# Funktioniert auf Debian nicht: /usr/bin/python3 -m pip install -r requirements.txt
+pip install -r requirements.txt
+```
 
-sudo apt-get install python3-pandas
-sudo apt-get install python3-influxdb
-
-
-
-
-sudo apt-get install libatlas-base-dev
-
-sudo apt-get upgrade python3
-
-
+### Wettermonitor initialisieren
+```bash
+python weather_app/main.py
 ```
 
 ### Wettermonitor automatisch starten
