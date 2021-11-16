@@ -21,7 +21,7 @@ import json
 import signal
 import sys
 from datetime import datetime, timedelta
-from time import sleep
+import time
 import os
 import threading
 from collections import deque
@@ -126,7 +126,7 @@ def __get_data_of_day(day, station, periodic_retry = False):
                 raise e
 
             print(f'Request for \'{e.request.url}\' failed. ({e})\nTrying again in 10 seconds...')
-            sleep(10)
+            time.sleep(10)
 
 def __define_types(data : pandas.DataFrame, date_format):
     '''Description:
@@ -276,16 +276,13 @@ def import_latest_data(config, periodic_read = False, callback = update.update_d
         # check if all historic data (retrieved from API) has been processed
         #wait 10min until the next call 
         if not first_cycle and periodic_read and check_db_day >= current_day and not first_cycle: #if its not the first cycle, and no new day arrived
-            # once every 10 Min
+            # everytime the clock hits 05', 15', 25', 35', 45' or 55' (The new measurement is always 5 Minutes delayed)
+            sleep_seconds = 600 - int((time.time()+300) % 600) + 10 # add ten seconds to compensate for inaccuracy 
             current_time = datetime.utcnow() + timedelta(hours = 1)
-            sleep_until = current_time + timedelta(minutes = 10)
-            # once per day
-            # sleep_until = current_time + timedelta(days = 1)
-            # sleep_until = sleep_until.replace(hour = 6, minute = 0, second = 0, microsecond = 0)
-            sleep_sec = (sleep_until - current_time).total_seconds()
+            sleep_until = current_time + timedelta(seconds = sleep_seconds, microseconds=0)
 
-            print('Sleep for ' + str(sleep_sec) + 's (from ' + str(current_time) + ' until ' + str(sleep_until) + ') when next data will be queried.')
-            sleep(sleep_sec)
+            print('Sleep for ' + str(sleep_seconds) + 's (from ' + str(current_time) + ' until ' + str(sleep_until) + ') when next data will be queried.')
+            time.sleep(sleep_seconds)
             current_day = current_time.replace(hour = 0, minute = 0, second = 0, microsecond = 0)
 
         if not periodic_read and check_db_day >= current_day: #if periodic read is disabled and newest data is already stored

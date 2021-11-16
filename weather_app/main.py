@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import time
 from flask import Flask  
 from flask import render_template, redirect, url_for
 
@@ -88,13 +89,9 @@ def front_page(station):
     
     return render_template('index.html', 
         station = station,
-        weather = weather
+        weather = weather,
+        refresh_seconds = 600 - int((time.time()+300) % 600) + 20 # add 20 seconds to compensate for inaccuracy
         )
-
-
-@app.route("/home", methods=['GET'])
-def home():
-    return render_template('some_page.html')
 
 
 if __name__ == "__main__":

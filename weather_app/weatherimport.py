@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import enum
 from pathlib import Path
-from windrose import WindroseAxes #pip install windrose
+from windrose import WindroseAxes
 
 class Measurement(enum.Enum):
   Air_temp = "air_temperature"
