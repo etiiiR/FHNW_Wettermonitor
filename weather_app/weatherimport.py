@@ -38,7 +38,10 @@ def init():
   
   wd.connect_db(config)
 
-  if wd.try_import_csv_file(config, 'mythenquai', str(Path(os.path.dirname(os.path.realpath(__file__))).parent) + "/Messwerte/messwerte_mythenquai_2007-2020.csv") and wd.try_import_csv_file(config, 'tiefenbrunnen', str(Path(os.path.dirname(os.path.realpath(__file__))).parent) + "/Messwerte/messwerte_tiefenbrunnen_2007-2020.csv"):
+  root = str(Path(os.path.dirname(os.path.realpath(__file__))).parent)
+  
+  if (wd.try_import_csv_file(config, 'mythenquai',    root + "/Messwerte/messwerte_mythenquai_2007-2020.csv") and
+      wd.try_import_csv_file(config, 'tiefenbrunnen', root + "/Messwerte/messwerte_tiefenbrunnen_2007-2020.csv")):
     wd.import_latest_data(config, periodic_read=False)
     print("Database successfully initialized.")
     systemInitialized = True
