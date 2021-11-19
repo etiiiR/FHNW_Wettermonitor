@@ -1,6 +1,8 @@
+from datetime import datetime, date
 import os
-from time import time
-from numpy import dsplit
+import numpy as np
+from dateutil.relativedelta import relativedelta
+from numpy.core.fromnumeric import shape
 import weatherdata as wd
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -137,6 +139,7 @@ def get_measurements(measurements : list(Measurement), station : str, time_range
   station (string): station name
   time_range (string or tuple of dateTime): timerange as string -> now to specific time in the past [1d, 2w, 5m...], timerage as tuple -> specific time in the pas to specific time in the past [tuple(dateTime, dateTime)]
   timeFilling (bool -> default: True): fill up missing measurements with NaN
+  refactorIndex (Boolean, default: True): set index as column "time" and resets if true
   """
 
   if type(time_range) is tuple:
@@ -146,10 +149,10 @@ def get_measurements(measurements : list(Measurement), station : str, time_range
     df = wd.get_multible_attr_entries(config, [measurement.value for measurement in measurements], station, time_range)
   else:
     raise Exception("time_range has to be a string or a tuple")
-
+  
   if timeFilling:
     df = df.resample("10min").asfreq()#resample (zeitlücken mit NaN füllen)
-  
+
   df["time"] = df.index
   df = df.reset_index(drop = True)
 
@@ -302,6 +305,94 @@ def extract_anomaly(station : str, start_time : str):
   df_anomaly = pd.concat([df_has_NaN, df_has_Na])
 
   return df_anomaly
+
+#forecast
+def construct_day_vector(df: pd.DataFrame, lim_weight: list):
+  """
+  constructs a vector in dependence of the dataframe
+
+  Parameters:
+  df (pandas.DataFrame)
+  lim_weight (list(tuple(min, max, weight_factor))): min -> vektorcomponent = 0, max -> vektorcomponent = 1, weight_factor ->  vektorcomponent * x
+  """
+
+  df = df.dropna()
+  df = df.reset_index(drop = True)
+  vector = np.empty(len(df.columns))
+  for _, row in df.iterrows():
+    
+    row = row.reset_index(drop = True)
+    temp_vector = np.empty(len(df.columns))
+    for index_item, item in row.iteritems():
+      min = lim_weight[index_item][0]
+      max = lim_weight[index_item][1]
+      weight = lim_weight[index_item][2]
+
+      #exceptions
+      if item <= min:
+        temp_vector[index_item] = 0
+        print(f"Warning: Value: {item} in column: {index_item} lower than allowed... set to 0")
+        break
+
+      if item >= max:
+        temp_vector[index_item] = weight
+        print(f"Warning: Value: {item} in column: {index_item} higher than allowed... set to weight")
+        break
+
+      temp_vector[index_item] = (1 / (max - min)) * item * weight
+      
+    vector = np.add(vector, temp_vector)
+  
+  return np.divide(vector, len(df.index))
+
+
+def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_months: int):
+  """
+  Get date of a day which is the closest to date_searchBestRecord by cos simularity 
+
+  Parameters:
+  station (string): station
+  date_searchBestRecord (datetime): output of this function is searching for a similar day as date_searchBestRecord
+  timeArea_months (int): window time bewteen (date_searchBestRecord - timeArea_months, date_searchBestRecord + timeArea_months) every year 
+  """
+
+  measurements = [Measurement.Air_temp, Measurement.Humidity] #selct measurements
+  vector_lim_weight = [(-100, 100, 1), (0, 110, 1)] #min, max, weight
+
+
+  measurements_converted = [measurement.value for measurement in measurements] #convert measurements
+
+  tables_hist =  wd.get_multible_attr_entries_yearlyWindow(config, measurements_converted, station, date_searchBestRecord, timeArea_months=timeArea_months) #get time windows
+  table_hist = pd.concat(tables_hist) #concat 
+  table_hist["time"] = [index.strftime("%m-%d") for index in table_hist.index] #add time column containing only month and day
+
+  dateToday = datetime(date_searchBestRecord.year, date_searchBestRecord.month, date_searchBestRecord.day)
+  table_today = get_measurements(measurements, station, (dateToday, dateToday + relativedelta(days = +1)), timeFilling=False)
+  
+  tables_groupedByDay_hist = [x for _, x in table_hist.groupby(table_hist['time'])] #group by same month and day
+
+  vector_today = construct_day_vector(table_today.drop(["time"], axis = 1), vector_lim_weight)
+  
+  best_date = datetime
+  bestCos = np.pi / 2
+  for table_hist_day in tables_groupedByDay_hist:
+    time = table_hist_day.index[0]
+    
+    vector = construct_day_vector(table_hist_day.drop(["time"], axis = 1), vector_lim_weight)
+
+    scal = sum([vector[i] * vector_today[i] for i in range(0, len(vector_today))])
+    length_vec = np.sqrt(sum([vector[i]**2 for i in range(0, len(vector))]))
+    length_vec_today = np.sqrt(sum([vector_today[i]**2 for i in range(0, len(vector_today))]))
+
+    result = np.arctan(scal / (length_vec * length_vec_today))
+
+    if result < bestCos:
+      bestCos = result
+      best_date = time
+      
+  return best_date
+
+  #print(construct_day_vector(tables[0], vector_lim_weight))
 
 if __name__ == '__main__':
   pass

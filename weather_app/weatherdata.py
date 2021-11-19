@@ -389,4 +389,60 @@ def get_multible_attr_entries(config, attributes, station, start_time : str, sto
     val = answer.get(station, None) #get pd.dataframe from key "station", return "None" if key not found
     return val
 
+def get_multible_attr_entries_yearlyWindow(config, attributes, station, targetDate: datetime, timeArea_months: int = 2) -> pd.DataFrame:
+    """
+    query specific fields from station in a specific time range every year (targetDate (month, day) +- x months)
+
+    Parameters:
+    config (Config): The Config containing the DB connection info
+    attributes (list of string): field names
+    station (string): station name
+    targetDate (datetime): target date 
+    timeArea_months (int, default: 2): time window around targetTime
+    """
+
+    query = f'SELECT first(air_temperature) FROM {station}'
+    answer = config.client.query(query) #query entries -> dictionary
+    df_first = answer.get(station, None) #get pd.dataframe from key "station", return "None" if key not found
+    oldest_timestamp = str(df_first.index.values[0])
+
+    query = f'SELECT last(air_temperature) FROM {station}'
+    answer = config.client.query(query) #query entries -> dictionary
+    df_first = answer.get(station, None) #get pd.dataframe from key "station", return "None" if key not found
+    newest_timestamp = str(df_first.index.values[0])
+
+    oldest_date = datetime.strptime(oldest_timestamp.split("T")[0], '%Y-%m-%d')
+    newest_date = datetime.strptime(newest_timestamp.split("T")[0], '%Y-%m-%d')
+
+    if oldest_date > newest_date:
+        raise Exception("Oldest timestamp in Database is newer than newest timestamp???")
+
+    dateTimeRange = []
+    buffer = oldest_date
+    while True:
+        if (targetDate.month - timeArea_months) < 1:
+            timeStart = datetime(buffer.year - 1, 12 + (targetDate.month - timeArea_months), targetDate.day)
+        else:
+            timeStart = datetime(buffer.year, targetDate.month - timeArea_months, targetDate.day)
+
+        if (targetDate.month + timeArea_months) > 12:
+            timeEnd = datetime(buffer.year + 1, (targetDate.month + timeArea_months) - 12, targetDate.day)
+        else:
+            timeEnd = datetime(buffer.year, targetDate.month + timeArea_months, targetDate.day)
+
+        dateTimeRange.append((timeStart, timeEnd))
+
+        buffer = datetime(buffer.year + 1, buffer.month, buffer.day)
+
+        if buffer > newest_date:
+            break
+    
+    tables = []
+    for range1, range2 in dateTimeRange:
+        query = f'SELECT {",".join(attributes)} FROM {station} WHERE time >= \'{range1.strftime("%Y-%m-%dT%H:%M:%SZ")}\' AND time <= \'{range2.strftime("%Y-%m-%dT%H:%M:%SZ")}\''
+        answer = config.client.query(query) #query entries -> dictionary
+        tables.append(answer.get(station, None)) #get pd.dataframe from key "station", return "None" if key not foundcand add to table
+
+    
+    return tables
 
