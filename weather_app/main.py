@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import time
+import logging
 from flask import Flask  
 from flask import render_template, redirect, url_for
 
@@ -14,7 +15,6 @@ import os
 app = Flask(__name__)
 influx_db = InfluxDB(app=app)
 ui = FlaskUI(app, fullscreen=True, width=600, height=500, start_server='flask')
-
 
 def create_weather_chart():
     #todays plots
@@ -83,6 +83,7 @@ def front_page(station):
         weather["minutes_since_last_measurement"] = (datetime.now(weather['time'].tzinfo) - weather['time'])/timedelta(minutes=1)
     else:
         # TODO set these values in #get_measurements
+        logging.warning("No measurements are available")
         letzte_messung = "not available yet"
         air_temperature = "not available yet"
         humidity = "not available yet"
@@ -91,11 +92,14 @@ def front_page(station):
         station = station,
         weather = weather,
         refresh_seconds = 600 - int((time.time()+300) % 600) + 20 # add 20 seconds to compensate for inaccuracy
-        )
+    )
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(asctime)s - %(message)s')
+    logging.info("Programm has started")
     weatherimport.init()
     #create_weather_chart()
     ui.run()
+    logging.info("Programm ended")
     
