@@ -32,7 +32,9 @@
                 <h2><u>Warnungen</u></h2>
                 <h2>Strahlung: {{ weather["global_radiation"] }}W/m²</h2>
                 <div style="margin-left: auto; margin-right: 0;">
-                    {% if weather["minutes_since_last_measurement"] < 15 %}
+                    {% if "minutes_since_last_measurement" not in weather %}
+                        <span class="tally alert">Daten werden geladen.</span>
+                    {% elif weather["minutes_since_last_measurement"] < 15 %}
                         <span class="tally success">Letzte Messung: {{weather["time"].strftime("%d.%m.%Y %H:%M")}}</span>
                     {% elif weather["minutes_since_last_measurement"] < 65 %}
                         <span class="tally warning">Letzte Messung: {{weather["time"].strftime("%d.%m.%Y %H:%M")}}</span>
