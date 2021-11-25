@@ -2,13 +2,17 @@ from datetime import datetime, date
 import os
 import numpy as np
 from dateutil.relativedelta import relativedelta
-from numpy.core.fromnumeric import shape
+from numpy.core.fromnumeric import shape, size
 import weatherdata as wd
 import matplotlib.pyplot as plt
 import pandas as pd
 import enum
 from pathlib import Path
 from windrose import WindroseAxes
+
+#import warnings
+#warnings.simplefilter("error")
+
 
 class Measurement(enum.Enum):
   Air_temp = "air_temperature"
@@ -130,7 +134,7 @@ def get_measurement(measurment : Measurement, station : str, time_range, timeFil
 
   return df
 
-def get_measurements(measurements : list(Measurement), station : str, time_range, timeFilling = True):
+def get_measurements(measurements : list(Measurement), station : str, time_range, timeFilling = True, keepIndex = False):
   """
   get a specific entries in a specific time range 
 
@@ -153,8 +157,9 @@ def get_measurements(measurements : list(Measurement), station : str, time_range
   if timeFilling:
     df = df.resample("10min").asfreq()#resample (zeitlücken mit NaN füllen)
 
-  df["time"] = df.index
-  df = df.reset_index(drop = True)
+  if not keepIndex:
+    df["time"] = df.index
+    df = df.reset_index(drop = True)
 
   return df
 
@@ -307,7 +312,7 @@ def extract_anomaly(station : str, start_time : str):
   return df_anomaly
 
 #forecast
-def construct_day_vector(df: pd.DataFrame, lim_weight: list):
+def construct_day_vector(df: pd.DataFrame, lim_weight: list, normalize_to_plusMinus = 1):
   """
   constructs a vector in dependence of the dataframe
 
@@ -316,15 +321,25 @@ def construct_day_vector(df: pd.DataFrame, lim_weight: list):
   lim_weight (list(tuple(min, max, weight_factor))): min -> vektorcomponent = 0, max -> vektorcomponent = 1, weight_factor ->  vektorcomponent * x
   """
 
+  if df.empty:
+    raise ValueError("Empty dataframe received")
+
   df = df.dropna() #remove measurements with missing values
   df = df.reset_index(drop = True) #delete index
   vector = np.empty(len(df.columns)) #create an empty vector with the length of the dataframe
 
-  for _, row in df.iterrows(): #iterate over rows
+  if df.empty:
+    raise ValueError("Dataframe empty after deleting observations containing NA")
+
+  for i_row_new in range(1, len(df.index)): #iterate over rows
+    row_old = df.iloc[[i_row_new - 1]].reset_index(drop = True) #reset index of rows
+    row_new = df.iloc[[i_row_new]].reset_index(drop = True) #reset index of rows
     
-    row = row.reset_index(drop = True) #reset index of rows
     temp_vector = np.empty(len(df.columns)) #create temporary vector
-    for index_item, item in row.iteritems(): #iterate over observation
+    for index_item in range(0, len(row_new.columns)): #iterate over observation
+
+      item = row_new.iat[0, index_item] - row_old.iat[0, index_item] #calculate difference
+      
       #extract limitations
       min = lim_weight[index_item][0]
       max = lim_weight[index_item][1]
@@ -332,23 +347,22 @@ def construct_day_vector(df: pd.DataFrame, lim_weight: list):
 
       #range check
       if item < min:
-        temp_vector[index_item] = 0
-        print(f"Warning: Value: {item} in column: {index_item} lower than allowed... set to 0")
+        temp_vector[index_item] = -1 * weight
+        print(f"Warning: Value: {item} in column: {df.columns[index_item]} lower than allowed... set to ", -1 * weight)
 
       elif item > max:
         temp_vector[index_item] = weight
-        print(f"Warning: Value: {item} in column: {index_item} higher than allowed... set to weight")
-        break
+        print(f"Warning: Value: {item} in column: {df.columns[index_item]} higher than allowed... set to", weight)
 
       else:
-        temp_vector[index_item] = (1 / (max - min)) * (item - min) * weight
-      
+        temp_vector[index_item] = (((normalize_to_plusMinus * 2 * item) / (max - min)) + ((-1 * normalize_to_plusMinus) - ((normalize_to_plusMinus * 2 * min) / (max - min)))) * weight #linearisierung für: item == max -> 1, item == min -> -1, zwischenresultat * weight -> resultat
+
     vector = np.add(vector, temp_vector)
-  
+
   return np.divide(vector, len(df.index))
 
 
-def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_months: int):
+def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_months: int, day_window_size = '4h', measurements = [Measurement.Air_temp, Measurement.Dew_point], vector_lim_weight = [(-10, 10, 1), (-10, 10, 0.1)]):
   """
   Get date of a day which is the closest to date_searchBestRecord by cos simularity 
 
@@ -356,53 +370,113 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
   station (string): station
   date_searchBestRecord (datetime): output of this function is searching for a similar day as date_searchBestRecord
   timeArea_months (int): window time bewteen (date_searchBestRecord - timeArea_months, date_searchBestRecord + timeArea_months) every year 
+  measurements (list(Measurement)): measurements to include. Example: [Measurement.Air_temp, Measurement.Dew_point]
+  vector_lim_weight (list(tuple)): specify min, max and weight for each measurement. Example for measurement Air_temp: (-10, 10, 1) min -> -10, max -> 10, weight = 1: if value = -10 -> X_airTemp = -1 * weight; value = 10 -> X_airTemp = 1 * weight; 
   """
 
-  #measurements = [Measurement.Air_temp, Measurement.Humidity] #selct measurements
-  #vector_lim_weight = [(-100, 100, 1), (0, 110, 1)] #min, max, weight
+  if len(measurements) != len(vector_lim_weight):
+    raise Exception("Each measurement needs a lim_weight tuple")
 
-  measurements = [Measurement.Air_temp, Measurement.Dew_point] #selct measurements
-  vector_lim_weight = [(-30, 70, 0.8), (-10, 110, 0.2)] #min, max, weight
+  if len(measurements) <= 1:
+    raise Exception("Its not possible to calculate a cosinus simularity in one dimension... Please add more measurements!")
 
+  print("Start nearest neighbour calculation...")
 
   measurements_converted = [measurement.value for measurement in measurements] #convert measurements
 
   tables_hist =  wd.get_multible_attr_entries_yearlyWindow(config, measurements_converted, station, date_searchBestRecord, timeArea_months=timeArea_months) #get time windows (missing measurements are not filled with None)
   table_hist = pd.concat(tables_hist) #concat 
-  table_hist["time"] = [index.strftime("%yyyy-mm-%dd") for index in table_hist.index] #add time column containing only year month and day
+  table_hist["time"] = [datetime(index.year, index.month, index.day) for index in table_hist.index] #add time column containing only year month and day
+  tables_groupedByDay_hist = table_hist.groupby(table_hist['time']) #group by day
 
+  #create vector list of date_searchBestRecord
   dateOnly = datetime(date_searchBestRecord.year, date_searchBestRecord.month, date_searchBestRecord.day) #get date of date_searchBestRecord only
-  table_dateSearchFor = get_measurements(measurements, station, (dateOnly, dateOnly + relativedelta(days = +1)), timeFilling=False).drop(["time"], axis = 1) #get measurements from date: date_searchBestRecord (whole day) and drop "time" attribute
-  
-  tables_groupedByDay_hist = [x for _, x in table_hist.groupby(table_hist['time'])] #group by day
+  table_dateSearchFor = get_measurements(measurements, station, (dateOnly, datetime(dateOnly.year, dateOnly.month, dateOnly.day, hour = 23, minute = 59, second = 59)), timeFilling=False, keepIndex = True)#get measurements from date: date_searchBestRecord (whole day) 
+  table_dateSearchFor["time"] = [pd.to_datetime(index, format="%H:%M:%S", errors='ignore') for index in table_dateSearchFor.index] #override time and store time only
+  time_dateSearchFor_windowed = table_dateSearchFor.groupby([pd.Grouper(key = 'time', freq=day_window_size, origin = "start_day")]) #group by an interval of 4h (origin = "start_Day" -> first group starts at midnight and not with first value)
 
-  vector_today = construct_day_vector(table_dateSearchFor, vector_lim_weight) #remove time attribute and construct vector of day
-  len_vectorToday = np.sqrt(sum([vector_today[i] ** 2 for i in range(0, len(vector_today))])) #calculate length of vectorToday 
+  vector_today_windowed_dict = {}
+  for index, table in time_dateSearchFor_windowed: #calculate vector/vector_length of each window
+    vector = construct_day_vector(table.drop(["time"], axis = 1), vector_lim_weight) #remove time attribute and construct vector of day
+    len_vector= np.sqrt(sum([vector[i] ** 2 for i in range(0, len(vector))])) #calculate length of vectorToday 
+    vector_today_windowed_dict[index.strftime("%H:%M:%S")] = (vector, len_vector) #append vector and length to dict
   
+  progress_counter = 0
+  progress_steps = [steps for steps in range(0, len(tables_groupedByDay_hist.size()), len(tables_groupedByDay_hist.size()) // 10)]
+
   #search for best cos
   best_date = dateOnly
   bestCos = np.pi / 2
-  for table_hist_day in tables_groupedByDay_hist:
-    time = table_hist_day.index[0]
+  for index, table_hist_day in tables_groupedByDay_hist:
+    time =  index
+
+    if datetime(time.year, time.month, time.day) == dateOnly: #reference day found
+      #print("reference day found:", datetime(time.year, time.month, time.day))
+      continue
+
+    table_day = table_hist_day #rename
     
-    vector = construct_day_vector(table_hist_day.drop(["time"], axis = 1), vector_lim_weight)
+    table_day["time"] = [pd.to_datetime(index, format="%H:%M:%S", errors='ignore') for index in table_day.index] #override time and store time only
 
-    if len(vector) != len(vector_today):
-      raise Exception("Vectors don't have equal length")
+    time_windowed = table_day.groupby([pd.Grouper(key = 'time', freq=day_window_size, origin = "start_day")], as_index = False) #group by an interval of 4h (origin = "start_Day" -> first group starts at midnight and not with first value)
 
-    scalarProd = sum([vector[i] * vector_today[i] for i in range(0, len(vector))])
-    len_vector = np.sqrt(sum([vector[i] ** 2 for i in range(0, len(vector))])) #calculate length of vector
 
-    result = np.arccos(scalarProd / (len_vector * len_vectorToday))
+    cosinus_list = []
+    for index, table in time_windowed:
+      key = index.strftime("%H:%M:%S")
 
-    if result < bestCos:
-      bestCos = result
-      best_date = time
-    
+      searchVector = vector_today_windowed_dict[key][0]
+      length_searchVector = vector_today_windowed_dict[key][1]
+
+      try:
+        vector = construct_day_vector(table.drop(["time"], axis = 1), vector_lim_weight) #remove time attribute and calculate vector
+      except ValueError as ex:
+        print(ex)
+        continue
       
+
+      if len(vector) != len(searchVector):
+        raise Exception("Vectors don't have equal length")
+
+      scalarProd = sum([vector[i] * searchVector[i] for i in range(0, len(vector))])
+      len_vector = np.sqrt(sum([vector[i] ** 2 for i in range(0, len(vector))])) #calculate length of vector
+
+      #if a vector has the length of 0
+      if len_vector == 0 or length_searchVector == 0:
+        continue
+
+      simularity = scalarProd / (len_vector * length_searchVector) #calculate simularity
+
+      #due to caluclation inaccuracy
+      if simularity > 1:
+        result = np.arccos(1)
+
+      elif simularity < 0:
+        result = np.arccos(0)
+
+      else:
+        result = np.arccos(simularity)
+
+      cosinus_list.append(result)
+
+    #compare only if list isn't empty -> this can happen, if construct_day_vector returns only null vectors a day long
+    if cosinus_list:
+      mean_cosinus =  np.mean(cosinus_list)
+
+      if mean_cosinus < bestCos:
+        bestCos = mean_cosinus
+        best_date = time
+
+    progress_counter += 1
+
+    if progress_counter in progress_steps:
+      print(progress_steps.index(progress_counter) * 10,"% reached")
+  
+  print("Most similar day found: ", best_date, " nearest neighbour calculation finished :)")
+
   return best_date
 
-  #print(construct_day_vector(tables[0], vector_lim_weight))
+
 
 if __name__ == '__main__':
   pass
