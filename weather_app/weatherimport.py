@@ -1,8 +1,6 @@
-from datetime import datetime, date
+from datetime import datetime
 import os
 import numpy as np
-from dateutil.relativedelta import relativedelta
-from numpy.core.fromnumeric import shape, size
 import weatherdata as wd
 import matplotlib.pyplot as plt
 import pandas as pd
