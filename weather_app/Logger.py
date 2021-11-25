@@ -33,22 +33,22 @@ wd.init()
 
 
 #forecast: neirest neibour
-dateToCheck = datetime(2018, 9, 15)
+dateToCheck = datetime(2015, 1, 20)
 measurements = [wd.Measurement.Air_temp, wd.Measurement.Humidity, wd.Measurement.Pressure]
 lim_Weights = [(-10, 10, 0.5), (-40, 40, 0.3), (-10, 10, 1)]
 bestDate = wd.nearest_neighbour("mythenquai", dateToCheck, 1, day_window_size = "2h", measurements = measurements, vector_lim_weight = lim_Weights) #suche einen ähnlichen Tag um den 2020.8.20 +- 1 Monat in allen verfügbaren Jahren 
 print("DateFound: ", bestDate)
 
-show_measurements = [wd.Measurement.Pressure]
+show_measurements = [wd.Measurement.Air_temp, wd.Measurement.Humidity]
 df1 = wd.get_measurements(show_measurements, "mythenquai", (dateToCheck, datetime(dateToCheck.year, dateToCheck.month, dateToCheck.day, 23, 59)))
 df2 = wd.get_measurements(show_measurements, "mythenquai", (bestDate, datetime(bestDate.year, bestDate.month, bestDate.day, 23, 59)))
-fig, axs = plt.subplots(1, 2)
-axs[0].plot(df1["time"].values, df1[[measurement.value for measurement in show_measurements]].values)
-axs[1].plot(df2["time"].values, df2[[measurement.value for measurement in show_measurements]].values)
-axs[0].legend([measurement.value for measurement in show_measurements])
-axs[1].legend([measurement.value for measurement in show_measurements])
+fig, axs = plt.subplots(len(show_measurements), 2)
+for i in range(0, len(show_measurements)):
+    axs[i, 0].plot(df1["time"].values, df1[show_measurements[i].value].values)
+    axs[i, 1].plot(df2["time"].values, df2[show_measurements[i].value].values)
+    axs[i, 0].set_title(show_measurements[i].name)
+    axs[i, 1].set_title(show_measurements[i].name)
 plt.show()
-
 
 
 #test of construct_day_vector function
