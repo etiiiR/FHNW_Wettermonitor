@@ -64,22 +64,25 @@ def tiefenbrunnen():
     return front_page("tiefenbrunnen")
 
 def front_page(station):
+    measurements = [weatherimport.Measurement.Air_temp,
+                    weatherimport.Measurement.Humidity,
+                    weatherimport.Measurement.Wind_gust_max_10min,
+                    weatherimport.Measurement.Wind_speed_avg_10min,
+                    weatherimport.Measurement.Wind_force_avg_10min,
+                    weatherimport.Measurement.Water_temp,
+                    weatherimport.Measurement.Dew_point,
+                    weatherimport.Measurement.Wind_chill,
+                    weatherimport.Measurement.Precipitation,
+                    weatherimport.Measurement.Water_level,
+                    weatherimport.Measurement.Pressure,
+                    weatherimport.Measurement.Radiation]
     if weatherimport.systemInitialized():
         # TODO: check if the database has old data if yes then update it and afterwards load the homepage
-        measurements = [weatherimport.Measurement.Air_temp,
-                        weatherimport.Measurement.Humidity,
-                        weatherimport.Measurement.Wind_gust_max_10min,
-                        weatherimport.Measurement.Wind_speed_avg_10min,
-                        weatherimport.Measurement.Wind_force_avg_10min,
-                        weatherimport.Measurement.Water_temp,
-                        weatherimport.Measurement.Dew_point,
-                        weatherimport.Measurement.Wind_chill,
-                        weatherimport.Measurement.Precipitation,
-                        weatherimport.Measurement.Water_level,
-                        weatherimport.Measurement.Pressure,
-                        weatherimport.Measurement.Radiation]
         weather = weatherimport.get_measurements(measurements, station, "1d")
         weather = weather.sort_values(by=['time'], ascending=False).to_dict("records")[0]
+        for measurement in measurements:
+            if measurement.value not in weather:
+                weather[measurement.value] = "-"
         weather["minutes_since_last_measurement"] = (datetime.now(weather['time'].tzinfo) - weather['time'])/timedelta(minutes=1)
     else:
         # TODO set these values in #get_measurements
@@ -87,6 +90,8 @@ def front_page(station):
         letzte_messung = "not available yet"
         air_temperature = "not available yet"
         humidity = "not available yet"
+        weather = { measurement.value: "-" for measurement in measurements }
+        
     
     return render_template('index.html', 
         station = station,
