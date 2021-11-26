@@ -80,18 +80,13 @@ def front_page(station):
         # TODO: check if the database has old data if yes then update it and afterwards load the homepage
         weather = weatherimport.get_measurements(measurements, station, "1d")
         weather = weather.sort_values(by=['time'], ascending=False).to_dict("records")[0]
-        for measurement in measurements:
-            if measurement.value not in weather:
-                weather[measurement.value] = "-"
+        for key in weather:
+            if weather[key] == None:
+                weather[key] = "-"
         weather["minutes_since_last_measurement"] = (datetime.now(weather['time'].tzinfo) - weather['time'])/timedelta(minutes=1)
     else:
-        # TODO set these values in #get_measurements
         logging.warning("No measurements are available")
-        letzte_messung = "not available yet"
-        air_temperature = "not available yet"
-        humidity = "not available yet"
         weather = { measurement.value: "-" for measurement in measurements }
-        
     
     return render_template('index.html', 
         station = station,
