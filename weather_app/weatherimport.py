@@ -286,7 +286,30 @@ def generate_windRose(station : str, time_range, showPlot = False, imagePath = N
     plt.show()
   else:
     plt.savefig(imagePath, bbox_inches='tight')
-  
+
+
+def wind_direction_to_text(wind_direction):
+    switcher = {
+        0: "Norden",
+        1: "Nordnordosten",
+        2: "Nordosten",
+        3: "Ostnordosten",
+        4: "Osten",
+        5: "Ostsüdosten",
+        6: "Südosten",
+        7: "Südsüdosten",
+        8: "Süden",
+        9: "Südsüdwesten",
+        10: "Südwesten",
+        11: "Westsüdwesten",
+        12: "Westen",
+        13: "Westordwesten",
+        14: "Nordwesten",
+        15: "Nordnordwesten",
+        16: "Norden"
+    }
+    return switcher.get((wind_direction + 11.25) // 22.5, "sorry, dr petrus git grad kei gring")
+
 
 #anomaly detection
 def extract_anomaly(station : str, start_time : str):

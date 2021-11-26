@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import time
 import logging
+from typing import Match
 from flask import Flask  
 from flask import render_template, redirect, url_for
 
@@ -69,6 +70,7 @@ def front_page(station):
                     weatherimport.Measurement.Wind_gust_max_10min,
                     weatherimport.Measurement.Wind_speed_avg_10min,
                     weatherimport.Measurement.Wind_force_avg_10min,
+                    weatherimport.Measurement.Wind_direction,
                     weatherimport.Measurement.Water_temp,
                     weatherimport.Measurement.Dew_point,
                     weatherimport.Measurement.Wind_chill,
@@ -84,6 +86,7 @@ def front_page(station):
             if weather[key] == None:
                 weather[key] = "-"
         weather["minutes_since_last_measurement"] = (datetime.now(weather['time'].tzinfo) - weather['time'])/timedelta(minutes=1)
+        weather["wind_direction_text"] = weatherimport.wind_direction_to_text(weather["wind_direction"])
     else:
         logging.warning("No measurements are available")
         weather = { measurement.value: "-" for measurement in measurements }

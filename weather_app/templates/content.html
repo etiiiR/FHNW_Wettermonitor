@@ -7,7 +7,7 @@
                 <h2><img src= {{ url_for('static', filename = 'Images/weather/windy.png' ) }} style="width: 1em" border="0"> {{ weather["wind_gust_max_10min"] }}m/s</h2>
                 <h2>Ø {{ weather["wind_speed_avg_10min"] }}m/s</h2>
                 <h2>Bft. {{ weather["wind_force_avg_10min"] }}</h2>
-                <h2>TODO WINDROSE<h2>
+                <h2><img src= {{ url_for('static', filename = 'Images/weather/arrow.png' ) }} style="width: 1em; transform: rotate({{ weather["wind_direction"] }}deg);" border="0"> {{ weather["wind_direction_text"] }}<h2>
             </div>
             
             <div class="cell">
