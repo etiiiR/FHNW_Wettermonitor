@@ -33,9 +33,9 @@ wd.init()
 
 
 #forecast: neirest neibour
-dateToCheck = datetime(2015, 1, 20)
-measurements = [wd.Measurement.Air_temp, wd.Measurement.Humidity, wd.Measurement.Pressure]
-lim_Weights = [(-10, 10, 0.5), (-40, 40, 0.3), (-10, 10, 1)]
+dateToCheck = datetime(2021, 11, 25)
+measurements = [wd.Measurement.Air_temp, wd.Measurement.Humidity]
+lim_Weights = [(-10, 10, 0.5), (-40, 40, 0.3)]
 bestDate = wd.nearest_neighbour("mythenquai", dateToCheck, 1, day_window_size = "2h", measurements = measurements, vector_lim_weight = lim_Weights) #suche einen ähnlichen Tag um den 2020.8.20 +- 1 Monat in allen verfügbaren Jahren 
 print("DateFound: ", bestDate)
 

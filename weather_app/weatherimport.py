@@ -503,6 +503,7 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
       
 
       if len(vector) != len(searchVector):
+        print(window)
         raise Exception("Vectors don't have equal length")
 
       scalarProd = sum([vector[i] * searchVector[i] for i in range(0, len(vector))]) #calculate scalar product of window

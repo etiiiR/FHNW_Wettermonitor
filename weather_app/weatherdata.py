@@ -365,6 +365,11 @@ def get_attr_entries(config, attribute, station, start_time : str, stop_time : s
     
     answer = config.client.query(query) #query entries -> dictionary
     val = answer.get(station, None) #get pd.dataframe from key "station", return "None" if key not found
+
+    #add empty column if not existent
+    if attribute not in val:
+            val[attribute] = None
+        
     return val
 
 def get_multible_attr_entries(config, attributes, station, start_time : str, stop_time : str = None) -> pd.DataFrame:
@@ -387,6 +392,12 @@ def get_multible_attr_entries(config, attributes, station, start_time : str, sto
     
     answer = config.client.query(query) #query entries -> dictionary
     val = answer.get(station, None) #get pd.dataframe from key "station", return "None" if key not found
+
+    #add empty column if not existent
+    for attribute in attributes:
+        if attribute not in val:
+            val[attribute] = None
+
     return val
 
 def get_multible_attr_entries_yearlyWindow(config, attributes, station, targetDate: datetime, timeArea_months: int = 2) -> pd.DataFrame:
@@ -441,6 +452,12 @@ def get_multible_attr_entries_yearlyWindow(config, attributes, station, targetDa
     for range1, range2 in dateTimeRange:
         query = f'SELECT {",".join(attributes)} FROM {station} WHERE time >= \'{range1.strftime("%Y-%m-%dT%H:%M:%SZ")}\' AND time <= \'{range2.strftime("%Y-%m-%dT%H:%M:%SZ")}\''
         answer = config.client.query(query) #query entries -> dictionary
+        
+        #add empty column if not existent
+        for attribute in attributes:
+            if attribute not in answer:
+                answer[attribute] = None
+
         tables.append(answer.get(station, None)) #get pd.dataframe from key "station", return "None" if key not foundcand add to table
 
     
