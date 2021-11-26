@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import os
 import numpy as np
 import weatherdata as wd
@@ -437,7 +437,6 @@ def construct_window_vector(df: pd.DataFrame, lim_weight: list, normalize_to_plu
 
   return vector
 
-
 def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_months: int, day_window_size = '4h', measurements = [Measurement.Air_temp, Measurement.Dew_point], vector_lim_weight = [(-10, 10, 1), (-10, 10, 0.1)]):
   """
   Get date of a day which is the closest to date_searchBestRecord by cos simularity 
@@ -471,6 +470,11 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
   table_dateSearchFor["time"] = [pd.to_datetime(index, format="%H:%M:%S", errors='ignore') for index in table_dateSearchFor.index] #override time and store time only
   time_dateSearchFor_windowed = table_dateSearchFor.groupby([pd.Grouper(key = 'time', freq=day_window_size, origin = "start_day")]) #group by an interval of 4h (origin = "start_Day" -> first group starts at midnight and not with first value)
 
+  #calculate max length of groups of a day with all values
+  date_range = pd.date_range("2018-01-01", periods=144, freq="10min")
+  date_range_df_windowed = pd.DataFrame(date_range, columns = ["time"]).groupby([pd.Grouper(key = 'time', freq=day_window_size, origin = "start_day")], as_index = False) 
+  max_group_length = len(date_range_df_windowed)
+
   vector_today_windowed_dict = {}
   for index, table in time_dateSearchFor_windowed: #calculate vector/vector_length of each window
     try:
@@ -502,6 +506,9 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
 
     time_windowed = table_day.groupby([pd.Grouper(key = 'time', freq=day_window_size, origin = "start_day")], as_index = False) #group by an interval of day_window_size (origin = "start_Day" -> first group starts at midnight and not with first value)
 
+    #if day has missing windows -> skip this day
+    if len(time_windowed) < max_group_length:
+      continue
 
     cosinus_list = [] #list of all window cosinus of that day
     for index, table in time_windowed: #iterate over windows
@@ -567,7 +574,49 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
 
   return best_date
 
+def forecast_of_tomorrow(station: str, date_searchBestRecord: datetime):
+  """
+  Get date and values of a day  which is the closest to date_searchBestRecord by cos simularity 
+  
+  Parameters:
+  station (string): station
+  date_searchBestRecord (datetime): output of this function is searching for a similar day as date_searchBestRecord
 
+  returns:
+  tuple(dateTime, pandas.DataFrame): returns a tuple containing the date of the predicted tomorrow and the values of the predicted tomorrow
+  """
+
+  possibleMeasurements = [Measurement.Air_temp, Measurement.Humidity]
+  config_possibleMeasurements = [(-10, 10, 0.5), (-40, 40, 0.3)]
+  
+  dateOnly = datetime(date_searchBestRecord.year, date_searchBestRecord.month, date_searchBestRecord.day) #get date of date_searchBestRecord only
+  test_measurement = get_all_measurements(station, (dateOnly, datetime(dateOnly.year, dateOnly.month, dateOnly.day, hour = 23, minute = 59, second = 59)), timeFilling=False)
+
+  #get indexes of available measurements with its config
+  indexAvailable = []
+  for i, name in enumerate([name.value for name in possibleMeasurements]):
+      if name in test_measurement.columns:
+        indexAvailable.append(i)
+
+  #if not enough measurements available (min: >= 2)
+  if len(indexAvailable) <= 1:
+    print("Not enough attributes available to do the nearest neighbour!")
+    return None
+      
+  #get measurements to observe
+  availableMeasurements = []
+  config_availableMeasurements = []
+  for i in indexAvailable:
+    availableMeasurements.append(possibleMeasurements[i])
+    config_availableMeasurements.append(config_possibleMeasurements[i])
+
+  date_of_nearestNeighbour = nearest_neighbour(station, date_searchBestRecord, 2, "2h", availableMeasurements, config_availableMeasurements) #get nearest date
+
+  predicted_date = date_of_nearestNeighbour + timedelta(days = 1) #add 1 day
+
+  test_measurement_data = get_all_measurements(station, (predicted_date, datetime(predicted_date.year, predicted_date.month, predicted_date.day, hour = 23, minute = 59, second = 59)), timeFilling=False) #get values of predicted date
+    
+  return (predicted_date, test_measurement_data)
 
 if __name__ == '__main__':
   pass

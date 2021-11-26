@@ -34,9 +34,7 @@ wd.init()
 
 #forecast: neirest neibour
 dateToCheck = datetime(2021, 11, 25)
-measurements = [wd.Measurement.Air_temp, wd.Measurement.Humidity]
-lim_Weights = [(-10, 10, 0.5), (-40, 40, 0.3)]
-bestDate = wd.nearest_neighbour("mythenquai", dateToCheck, 1, day_window_size = "2h", measurements = measurements, vector_lim_weight = lim_Weights) #suche einen ähnlichen Tag um den 2020.8.20 +- 1 Monat in allen verfügbaren Jahren 
+bestDate = wd.forecast_of_tomorrow("mythenquai", dateToCheck)[0]
 print("DateFound: ", bestDate)
 
 show_measurements = [wd.Measurement.Air_temp, wd.Measurement.Humidity]
@@ -49,7 +47,6 @@ for i in range(0, len(show_measurements)):
     axs[i, 0].set_title(show_measurements[i].name)
     axs[i, 1].set_title(show_measurements[i].name)
 plt.show()
-
 
 
 #test of construct_day_vector function
