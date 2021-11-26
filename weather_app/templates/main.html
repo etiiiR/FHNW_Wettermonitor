@@ -2,15 +2,15 @@
 <div id='body' class="container-fluid">
     <div class="grid">
         <div class="row flex-align-stretch" style='min-height: 33vh; margin-bottom:3vh;'>
-            <div class="cell">
+            <div class="cell" onclick="location.href='/wetterstation/{{station}}/wind';">
                 <h2><u>Wind</u></h2>
                 <h2><img src= {{ url_for('static', filename = 'Images/weather/windy.png' ) }} style="width: 1em" border="0"> {{ weather["wind_gust_max_10min"] }}m/s</h2>
                 <h2>Ø {{ weather["wind_speed_avg_10min"] }}m/s</h2>
                 <h2>Bft. {{ weather["wind_force_avg_10min"] }}</h2>
-                <h2><img src= {{ url_for('static', filename = 'Images/weather/arrow.png' ) }} style="width: 1em; transform: rotate({{ weather["wind_direction"] }}deg);" border="0"> {{ weather["wind_direction_text"] }}<h2>
+                <h2><img src= {{ url_for('static', filename = 'Images/weather/arrow.png' ) }} style="width: 1em; transform: rotate({{ weather["wind_direction"] }}deg);" border="0"> {{ weather["wind_direction_text"] }}<h2>                        
             </div>
             
-            <div class="cell">
+            <div class="cell" onclick="location.href='/wetterstation/{{station}}/temperature';">
                 <h2><u>Temperatur</u></h2>
                 <h2><img src= {{ url_for('static', filename = 'Images/weather/temperature.png'       ) }} style="width: 1em" border="0"> {{ weather["air_temperature"] }}°C</h2>
                 <h2><img src= {{ url_for('static', filename = 'Images/weather/water-temperature.png' ) }} style="width: 1em" border="0"> {{ weather["water_temperature"] }}°C</h2>
@@ -20,7 +20,7 @@
         </div>
 
         <div class="row flex-align-stretch" style='min-height: 33vh; margin-bottom:3vh;'>
-            <div class="cell">
+            <div class="cell" onclick="location.href='/wetterstation/{{station}}/water';">
                 <h2><u>Wasser</u></h2>
                 <h2><img src= {{ url_for('static', filename = 'Images/weather/rain.png'      ) }} style="width: 1em" border="0"> {{ weather["precipitation"] }}mm</h2>
                 <h2><img src= {{ url_for('static', filename = 'Images/weather/sea-level.png' ) }} style="width: 1em" border="0"> {{ weather["water_level"] }}m ü. M.</h2>

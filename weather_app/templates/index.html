@@ -6,8 +6,8 @@
     <meta http-equiv="refresh" content={{ refresh_seconds }} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <link rel="stylesheet" href="../static/metro-all.min.css">
-    <link rel="stylesheet" href="../static/styles.css">
+    <link rel="stylesheet" href="/static/metro-all.min.css">
+    <link rel="stylesheet" href="/static/styles.css">
     <title>FlaskApp</title>
 </head>
 
@@ -15,16 +15,16 @@
     <div id='holder' class="p-5">
         <header>
             <ul class="h-menu large">
-                <li><a href="\mythenquai"    class={{ "text-bold" if station == "mythenquai" }}>Mythenquai</a></li>
-                <li><a href="\tiefenbrunnen" class={{ "text-bold" if station == "tiefenbrunnen" }}>Tiefenbrunnen</a></li>
+                <li><a href="/wetterstation/mythenquai"    class={{ "text-bold" if station == "mythenquai" }}>Mythenquai</a></li>
+                <li><a href="/wetterstation/tiefenbrunnen" class={{ "text-bold" if station == "tiefenbrunnen" }}>Tiefenbrunnen</a></li>
             </ul>
         </header>
                 
-        {% include 'content.html' %}
+        {% include subpage+'.html' %}
 
-        <script src="../static/jquery-3.4.1.min.js"></script>
-        <script src="../static/metro.min.js"></script>
-        <script src="../static/stop_server.js"></script>
+        <script src="/static/jquery-3.4.1.min.js"></script>
+        <script src="/static/metro.min.js"></script>
+        <script src="/static/stop_server.js"></script>
 
     </div>
 </body>

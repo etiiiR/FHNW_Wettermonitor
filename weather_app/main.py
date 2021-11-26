@@ -51,20 +51,22 @@ def get_data():
 
 
 @app.route('/')
+@app.route('/wetterstation')
 def index():
-    return redirect("/mythenquai")
+    """
+    Leitet den Client weiter auf die Übersichtsseite der Messstation Tiefenbrunnen.
+    """
+    return redirect("/wetterstation/tiefenbrunnen")
 
 
-@app.route("/mythenquai")
-def mythenquai():
-    return front_page("mythenquai")
+@app.route("/wetterstation/<station>")
+def wetterstation(station: str):
+    """
+    Zeigt eine Übersicht der Wetterdaten der Messstation station an.
 
-
-@app.route("/tiefenbrunnen")
-def tiefenbrunnen():
-    return front_page("tiefenbrunnen")
-
-def front_page(station):
+    Args:
+        station (str): Name der Wetterstation.
+    """
     measurements = [weatherimport.Measurement.Air_temp,
                     weatherimport.Measurement.Humidity,
                     weatherimport.Measurement.Wind_gust_max_10min,
@@ -92,8 +94,32 @@ def front_page(station):
         weather = { measurement.value: "-" for measurement in measurements }
     
     return render_template('index.html', 
+        subpage = "main",
         station = station,
         weather = weather,
+        refresh_seconds = 600 - int((time.time()+300) % 600) + 20 # add 20 seconds to compensate for inaccuracy
+    )
+
+@app.route("/wetterstation/<station>/<category>")
+def wetterstation_details_0(station: str, category: str):
+    return redirect(f"/wetterstation/{station}/{category}/history")
+
+@app.route("/wetterstation/<station>/<category>/<type>")
+def wetterstation_details(station: str, category: str, type: str):
+    """
+    Zeigt eine Grafik für eine Messstation für eine bestimmte Kategorie von Messwerten
+    und einem bestimmten Zeitraum an. 
+    
+    Args:
+        station (str): Der Name der Messstation.
+        category (str): Die Kategorie der anzuzeigenden Messwerte (wind, temperature, water).
+        type (str): Der Zeitraum der anzuzeigenden Messwerte (today, tomorrow, history).
+    """
+    return render_template('index.html', 
+        subpage = "graph",
+        category = category,
+        type = type,
+        station = station,
         refresh_seconds = 600 - int((time.time()+300) % 600) + 20 # add 20 seconds to compensate for inaccuracy
     )
 
