@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 import os
 import numpy as np
 import weatherdata as wd
@@ -310,13 +310,13 @@ def extract_anomaly(station : str, start_time : str):
   return df_anomaly
 
 #forecast
-def construct_day_vector(df: pd.DataFrame, lim_weight: list, normalize_to_plusMinus = 1):
+def construct_window_vector_old(df: pd.DataFrame, lim_weight: list, normalize_to_plusMinus = 1):
   """
   constructs a vector in dependence of the dataframe
 
   Parameters:
   df (pandas.DataFrame)
-  lim_weight (list(tuple(min, max, weight_factor))): min -> vektorcomponent = 0, max -> vektorcomponent = 1, weight_factor ->  vektorcomponent * x
+  lim_weight (list(tuple(min, max, weight_factor))): min -> vektorcomponent = 0, max -> vektorcomponent = 1, weight_factor ->  vektorcomponent * x; minMax for the difference between 10min Steps
   """
 
   if df.empty:
@@ -329,12 +329,12 @@ def construct_day_vector(df: pd.DataFrame, lim_weight: list, normalize_to_plusMi
   if df.empty:
     raise ValueError("Dataframe empty after deleting observations containing NA")
 
-  for i_row_new in range(1, len(df.index)): #iterate over rows
+  for i_row_new in range(1, len(df.index)): #iterate over observations
     row_old = df.iloc[[i_row_new - 1]].reset_index(drop = True) #reset index of rows
     row_new = df.iloc[[i_row_new]].reset_index(drop = True) #reset index of rows
     
     temp_vector = np.empty(len(df.columns)) #create temporary vector
-    for index_item in range(0, len(row_new.columns)): #iterate over observation
+    for index_item in range(0, len(row_new.columns)): #iterate over attributes
 
       item = row_new.iat[0, index_item] - row_old.iat[0, index_item] #calculate difference
       
@@ -357,13 +357,68 @@ def construct_day_vector(df: pd.DataFrame, lim_weight: list, normalize_to_plusMi
 
     vector = np.add(vector, temp_vector)
 
-  return np.divide(vector, len(df.index))
+  return np.divide(vector, len(df.index) - 1)
+
+def construct_window_vector(df: pd.DataFrame, lim_weight: list, normalize_to_plusMinus = 1):
+  """
+  constructs a vector in dependence of the dataframe
+
+  Parameters:
+  df (pandas.DataFrame)
+  lim_weight (list(tuple(min, max, weight_factor))): min -> vektorcomponent = 0, max -> vektorcomponent = 1, weight_factor ->  vektorcomponent * x; minMax for the difference between 10min Steps
+  """
+
+  if df.empty:
+    raise ValueError("Empty dataframe received")
+
+  df = df.dropna() #remove measurements with missing values
+  vector = np.empty(len(df.columns)) #create an empty vector with the length of the dataframe
+
+  if df.empty:
+    raise ValueError("Dataframe empty after deleting observations containing NA")
+
+  df = df.sort_index() #sortiere nach datum -> top = oldest, bottom = newest
+
+  if type(df.index[-1]) != pd.Timestamp or type(df.index[0]) != pd.Timestamp:
+    raise Exception("Index has wrong format!!!")
+
+  num_of_10min_steps =  int((df.index[-1] - df.index[0]).total_seconds() / (10 * 60)) #calculate number of 10 min steps
+
+  if num_of_10min_steps == 0:
+    raise ValueError("This window is containing one observation only after deleting all observations containing NA")
+
+  vector = np.empty(len(df.columns)) #create an empty vector with the length of the dataframe
+  for index_item in range(0, len(df.columns)): #iterate over attributes
+      #extract limitations
+      min = lim_weight[index_item][0] * num_of_10min_steps
+      max = lim_weight[index_item][1] * num_of_10min_steps
+      weight = lim_weight[index_item][2]
+
+      #extract observations
+      first_observation = df.iat[0, index_item] #get first observation
+      last_observation = df.iat[-1, index_item] #get last observation
+
+      delta = last_observation - first_observation #calculate difference
+  
+      #range check
+      if delta < min:
+        vector[index_item] = -1 * weight
+        print(f"Warning: Value: {delta} in column: {df.columns[index_item]} lower than allowed... set to ", -1 * weight)
+
+      elif delta > max:
+        vector[index_item] = weight
+        print(f"Warning: Value: {delta} in column: {df.columns[index_item]} higher than allowed... set to", weight)
+
+      else:
+        vector[index_item] = (((normalize_to_plusMinus * 2 * delta) / (max - min)) + ((-1 * normalize_to_plusMinus) - ((normalize_to_plusMinus * 2 * min) / (max - min)))) * weight #linearisierung für: item == max -> 1, item == min -> -1, zwischenresultat * weight -> resultat
+
+  return vector
 
 
 def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_months: int, day_window_size = '4h', measurements = [Measurement.Air_temp, Measurement.Dew_point], vector_lim_weight = [(-10, 10, 1), (-10, 10, 0.1)]):
   """
   Get date of a day which is the closest to date_searchBestRecord by cos simularity 
-
+  
   Parameters:
   station (string): station
   date_searchBestRecord (datetime): output of this function is searching for a similar day as date_searchBestRecord
@@ -395,17 +450,23 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
 
   vector_today_windowed_dict = {}
   for index, table in time_dateSearchFor_windowed: #calculate vector/vector_length of each window
-    vector = construct_day_vector(table.drop(["time"], axis = 1), vector_lim_weight) #remove time attribute and construct vector of day
-    len_vector= np.sqrt(sum([vector[i] ** 2 for i in range(0, len(vector))])) #calculate length of vectorToday 
-    vector_today_windowed_dict[index.strftime("%H:%M:%S")] = (vector, len_vector) #append vector and length to dict
-  
+    try:
+      vector = construct_window_vector(table.drop(["time"], axis = 1), vector_lim_weight) #remove time attribute and construct vector of day
+      len_vector= np.sqrt(sum([vector[i] ** 2 for i in range(0, len(vector))])) #calculate length of vectorToday 
+      vector_today_windowed_dict[index.strftime("%H:%M:%S")] = (vector, len_vector) #append vector and length to dict
+    except ValueError as ex:
+      print("Warning!!! the day we are searching for has empty values... number of window will be shortened -> this can lead to more unprecisely predictions")
+    
+  if not vector_today_windowed_dict:
+    raise Exception("The day we are searching for cannot be vectorized... stopped searching!")
+
   progress_counter = 0
   progress_steps = [steps for steps in range(0, len(tables_groupedByDay_hist.size()), len(tables_groupedByDay_hist.size()) // 10)]
 
   #search for best cos
   best_date = dateOnly
   bestCos = np.pi / 2
-  for index, table_hist_day in tables_groupedByDay_hist:
+  for index, table_hist_day in tables_groupedByDay_hist: #iterate over days
     time =  index
 
     if datetime(time.year, time.month, time.day) == dateOnly: #reference day found
@@ -414,30 +475,38 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
 
     table_day = table_hist_day #rename
     
-    table_day["time"] = [pd.to_datetime(index, format="%H:%M:%S", errors='ignore') for index in table_day.index] #override time and store time only
+    table_day["time"] = [pd.to_datetime(index, format="%H:%M:%S", errors='ignore') for index in table_day.index] #override date+time and store time only
 
-    time_windowed = table_day.groupby([pd.Grouper(key = 'time', freq=day_window_size, origin = "start_day")], as_index = False) #group by an interval of 4h (origin = "start_Day" -> first group starts at midnight and not with first value)
+    time_windowed = table_day.groupby([pd.Grouper(key = 'time', freq=day_window_size, origin = "start_day")], as_index = False) #group by an interval of day_window_size (origin = "start_Day" -> first group starts at midnight and not with first value)
 
 
-    cosinus_list = []
-    for index, table in time_windowed:
-      key = index.strftime("%H:%M:%S")
+    cosinus_list = [] #list of all window cosinus of that day
+    for index, table in time_windowed: #iterate over windows
+      key = index.strftime("%H:%M:%S") #get time of this window (also key of vector_today_windowed_dict)
 
-      searchVector = vector_today_windowed_dict[key][0]
-      length_searchVector = vector_today_windowed_dict[key][1]
+      window = vector_today_windowed_dict.get(key, None) #get window of searchDay
 
+      #if window not found (failure in )
+      if not window:
+        print("Searching day vector not found (this is resulting due an error while creating the window vectors of our searching day)... Ignore this window")
+        continue
+      searchVector = window[0]
+      length_searchVector = window[1]
+
+      #construct window vector
       try:
-        vector = construct_day_vector(table.drop(["time"], axis = 1), vector_lim_weight) #remove time attribute and calculate vector
+        vector = construct_window_vector(table.drop(["time"], axis = 1), vector_lim_weight) #remove time attribute and calculate vector
       except ValueError as ex:
         print(ex)
+        print("Window vector couldnt be created... Ignore this window")
         continue
       
 
       if len(vector) != len(searchVector):
         raise Exception("Vectors don't have equal length")
 
-      scalarProd = sum([vector[i] * searchVector[i] for i in range(0, len(vector))])
-      len_vector = np.sqrt(sum([vector[i] ** 2 for i in range(0, len(vector))])) #calculate length of vector
+      scalarProd = sum([vector[i] * searchVector[i] for i in range(0, len(vector))]) #calculate scalar product of window
+      len_vector = np.sqrt(sum([vector[i] ** 2 for i in range(0, len(vector))])) #calculate length of window vector
 
       #if a vector has the length of 0
       if len_vector == 0 or length_searchVector == 0:
@@ -457,7 +526,7 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
 
       cosinus_list.append(result)
 
-    #compare only if list isn't empty -> this can happen, if construct_day_vector returns only null vectors a day long
+    #compare only if list isn't empty -> this can happen, if construct_window_vector creates only empty vectors a day long
     if cosinus_list:
       mean_cosinus =  np.mean(cosinus_list)
 

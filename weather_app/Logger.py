@@ -51,6 +51,7 @@ for i in range(0, len(show_measurements)):
 plt.show()
 
 
+
 #test of construct_day_vector function
 #df2 = pd.DataFrame(np.array([[1, 4, 7], [2, 5, 8], [3, 6, 9]]),
 #                   columns=['a', 'b', 'c'])
@@ -61,6 +62,7 @@ plt.show()
 #print(wd.construct_day_vector(df2, limit))
 
 
+
 #test window function
 #d = {"time": [datetime(2008, 5, 25, 3, 0, 0), datetime(2008, 5, 25, 4, 0, 0), datetime(2008, 5, 25, 10, 0, 0)], "col1": [1, 2, 3]}
 #table_day = pd.DataFrame(data= d)
@@ -69,3 +71,14 @@ plt.show()
 
 #for _, table in time_windowed:
 #    print(table)
+
+
+
+#test construct_day_vector
+#d = {"index": [datetime(2008, 5, 25, 3, 0, 0), datetime(2008, 5, 25, 3, 10, 0), datetime(2008, 5, 25, 3, 20, 0)], "col1": [1, 2, 3], "col2": [4, 5, 6]}
+#table_day = pd.DataFrame(data = d).set_index("index")
+#table_day = table_day.sort_index()
+#table_day1 = table_day.copy()
+#print(table_day)
+#print(wd.construct_day_vector(table_day, [(0, 5, 1), (0, 3, 1)]))
+#print(wd.construct_day_vector_old(table_day1, [(0, 5, 1), (0, 3, 1)]))
