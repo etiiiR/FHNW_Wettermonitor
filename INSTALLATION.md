@@ -68,7 +68,7 @@ sudo pip install pandas
 ```bash
 git clone https://github.com/etiiiR/FHNW_Wettermonitor.git
 cd FHNW_Wettermonitor
-pip install -r requirements.txt
+pip install -r weather_app/requirements.txt
 ```
 
 ### Wettermonitor initialisieren
