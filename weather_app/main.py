@@ -13,6 +13,7 @@ import weatherimport
 import threading
 from pathlib import Path
 import os
+import shutil
 
 app = Flask(__name__)
 influx_db = InfluxDB(app=app)
@@ -124,11 +125,13 @@ if __name__ == "__main__":
     logging.info("Programm has started")
 
     weatherimport.init()
-    weatherimport.generate_today_graphs()
-    weatherimport.generate_last_7_days_graphs()
 
-    schedule.every(5).seconds.do(weatherimport.generate_last_7_days_graphs)
-
+    # replace possible old graphs with a message
+    static_images = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images"
+    for station in ["tiefenbrunnen", "mythenquai"]:
+        for category in ["wind", "temperature", "water"]:
+            for type in ["today", "tomorrow", "history"]:
+                shutil.copyfile(static_images+"/generating_plot.png", f"{static_images}/graphs/{station}_{category}_{type}.png")
 
     schedule.every().day.at("00:30").do(weatherimport.generate_last_7_days_graphs)
     schedule.every().day.at("01:00").do(weatherimport.generate_prediction_graphs)
@@ -136,6 +139,13 @@ if __name__ == "__main__":
     # matplotlib needs to run in the main thread, because that dumbass library is not thread safe and it will print warning messages like 20 atomic bombs have been detonated and it's the ending of humanity.
     threading.Thread(target=ui.run).start()
     
+    # generate graphs the first time
+    weatherimport.generate_today_graphs()
+    weatherimport.generate_last_7_days_graphs()
+
+    # TODO the prediction needs to be created first
+    weatherimport.generate_prediction_graphs() 
+
     check_for_pending_jobs()
 
     logging.info("Programm ended")
