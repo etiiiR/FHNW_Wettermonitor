@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import time
+import schedule
 import logging
 from typing import Match
 from flask import Flask  
@@ -17,37 +18,31 @@ app = Flask(__name__)
 influx_db = InfluxDB(app=app)
 ui = FlaskUI(app, fullscreen=True, width=600, height=500, start_server='flask')
 
-def create_weather_chart():
-    #todays plots
-    weatherimport.generate_plot_colMatrix([(weatherimport.Measurement.Air_temp, ("Temperatur", "T", "°C")), (weatherimport.Measurement.Humidity, ("Luftfeuchtigkeit", "", "%"))], "mythenquai", (datetime.today().date(), datetime.now()), imagePath=str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/Images/Temp_Hum_Today_Mythenquai.png")
-    weatherimport.generate_plot_colMatrix([(weatherimport.Measurement.Air_temp, ("Temperatur", "T", "°C")), (weatherimport.Measurement.Humidity, ("Luftfeuchtigkeit", "", "%"))], "tiefenbrunnen", (datetime.today().date(), datetime.now()), imagePath=str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/Images/Temp_Hum_Today_Tiefenbrunnen.png")
-    weatherimport.generate_windRose("mythenquai", (datetime.today().date(), datetime.now()), imagePath=str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/Images/WindRose_Today_Mythenquai.png")
-    weatherimport.generate_windRose("tiefenbrunnen", (datetime.today().date(), datetime.now()), imagePath=str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/Images/WindRose_Today_Tiefenbrunnen.png")
-
-    #historical plots
-    weatherimport.generate_plot_colMatrix([(weatherimport.Measurement.Air_temp, ("Temperatur", "T", "°C")), (weatherimport.Measurement.Humidity, ("Luftfeuchtigkeit", "", "%"))], "mythenquai", (datetime(2015, 1, 1), datetime.now()), imagePath=str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/Images/Temp_Hum_Hist_Mythenquai.png")
-    weatherimport.generate_plot_colMatrix([(weatherimport.Measurement.Air_temp, ("Temperatur", "T", "°C")), (weatherimport.Measurement.Humidity, ("Luftfeuchtigkeit", "", "%"))], "tiefenbrunnen", (datetime(2015, 1, 1), datetime.now()), imagePath=str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/Images/Temp_Hum_Hist_Tiefenbrunnen.png")
-    weatherimport.generate_windRose("mythenquai", (datetime(2015, 1, 1), datetime.now()), imagePath=str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/Images/WindRose_Hist_Mythenquai.png")
-    weatherimport.generate_windRose("tiefenbrunnen", (datetime(2015, 1, 1), datetime.now()), imagePath=str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/Images/WindRose_Hist_Tiefenbrunnen.png")
-    
-    #todo save a IMAGE of the Weather in the Images Folder
-    pass
-
 def get_weather_store_in_data(data):
     #todo get Weather from influx and store it in the Context to refresh the / Route and show the weather
     data = data
 
 def update_data():
-    print('Update Data from database')
+    # use the scheduler to plot inside the main thread
+    # generate_today_graphs() will cancel the job, so the job is only run once
+    schedule.every().second.do(weatherimport.generate_today_graphs) # update graphs with new data
+    logging.info('Update Data from database')
 
 
-def get_data_continuesly():
-    weatherimport.read_data_continuesly()
+def check_for_pending_jobs():
+    while 1:
+        n = schedule.idle_seconds()
+        if n is None:
+            n = 1
+        if n > 0:
+            # sleep exactly the right amount of time
+            time.sleep(n)
+        schedule.run_pending()
+
 
 @app.before_first_request
-def get_data():
-    t=threading.Thread(target=get_data_continuesly)
-    t.start()
+def get_data_continuesly():
+    threading.Thread(target=weatherimport.read_data_continuesly).start()
 
 
 @app.route('/')
@@ -123,12 +118,26 @@ def wetterstation_details(station: str, category: str, type: str):
         refresh_seconds = 600 - int((time.time()+300) % 600) + 20 # add 20 seconds to compensate for inaccuracy
     )
 
+def run():
+    ui.run()
 
 if __name__ == "__main__":
+
     logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(asctime)s - %(message)s')
     logging.info("Programm has started")
+
     weatherimport.init()
-    #create_weather_chart()
-    ui.run()
+
+    schedule.every(5).seconds.do(weatherimport.generate_last_7_days_graphs)
+
+
+    schedule.every().day.at("00:30").do(weatherimport.generate_last_7_days_graphs)
+    schedule.every().day.at("01:00").do(weatherimport.generate_prediction_graphs)
+    
+    # matplotlib needs to run in the main thread
+    threading.Thread(target=run).start()
+    
+    check_for_pending_jobs()
+
     logging.info("Programm ended")
     

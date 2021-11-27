@@ -1,10 +1,15 @@
 from datetime import date, datetime, timedelta
 import os
+import logging
+import schedule
 import numpy as np
 import weatherdata as wd
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import matplotlib.ticker as ticker
 import pandas as pd
 import enum
+import locale
 from pathlib import Path
 from windrose import WindroseAxes
 
@@ -39,6 +44,7 @@ def init():
   """
   connect to db, import historic data if not imported, import latest data (no periodic read)
   """
+  locale.setlocale(locale.LC_ALL, 'de_DE') # formats dates on plots correct
   
   wd.connect_db(config)
 
@@ -161,8 +167,79 @@ def get_measurements(measurements : list(Measurement), station : str, time_range
 
   return df
 
+# TODO maybe move this to a different file.
+wind_measurements = [Measurement.Wind_speed_avg_10min,
+                     Measurement.Wind_gust_max_10min,
+                     Measurement.Wind_force_avg_10min,
+                     Measurement.Wind_direction] # currently not plotted, since plotting is not that easy and therefore out of scope
 
 #generate chart
+def generate_today_graphs():
+  logging.info("#generate_today_graphs()")
+
+  # wind
+  # temperature
+  # water
+  return schedule.CancelJob
+
+
+def generate_last_7_days_graphs():
+  logging.info("#generate_last_7_days_graphs()")
+  # wind
+  wind_tiefenbrunnen = get_measurements(wind_measurements, "tiefenbrunnen", "7d")
+  # aggregate window every 1 hour
+  wind_tiefenbrunnen = wind_tiefenbrunnen.resample('H', on='time').agg(
+    { Measurement.Wind_speed_avg_10min.value:'mean',
+      Measurement.Wind_gust_max_10min .value:'max',
+      Measurement.Wind_force_avg_10min.value:'median',
+      Measurement.Wind_direction      .value:'median'})
+
+  wind_tiefenbrunnen["time"] = wind_tiefenbrunnen.index
+  wind_tiefenbrunnen = wind_tiefenbrunnen.reset_index(drop = True)
+
+  fig, ax1 = plt.subplots(figsize=(12,5))
+
+  # first y-Axis
+  ax1.plot(wind_tiefenbrunnen['time'], wind_tiefenbrunnen[Measurement.Wind_speed_avg_10min.value], color="#264653") # Colors from https://coolors.co/264653-2a9d8f-e9c46a-f4a261-e76f51
+  ax1.plot(wind_tiefenbrunnen['time'], wind_tiefenbrunnen[Measurement.Wind_gust_max_10min .value], color="#2A9D8F")
+  # expand the limits to make sure y=0, y=10 are on the axis
+  bottom, top = ax1.get_ylim()
+  ax1.set_ylim(bottom if bottom < 0 else 0, top if top > 10 else 10)
+  ax1.set_ylabel('m/s')
+  ax1.legend(["Durchschnittliche Windgeschwindigkeit", "Maximale Geschwindigkeit Windböen"], loc="upper left")
+
+  # second y-Axis
+  ax2 = ax1.twinx()
+  ax2.plot(wind_tiefenbrunnen['time'], wind_tiefenbrunnen[Measurement.Wind_force_avg_10min.value], color="#E9C46A", alpha=0.75)
+  # expand the limits to make sure y=0, y=7 are on the axis
+  bottom, top = ax2.get_ylim()
+  ax2.set_ylim(bottom if bottom < 0 else 0, top if top > 7 else 7)
+  ax2.set_ylabel('Beaufortskala')
+  ax2.legend(["Windstärke"], loc="upper right")
+
+  # x-Axis
+  ax1.set_xlabel('Zeit')
+  ax1.xaxis.set_major_formatter(mdates.DateFormatter('%A, %d %b'))
+  for label in ax1.get_xticklabels(which='major'):
+      label.set(rotation=30, horizontalalignment='right')
+
+  fig.tight_layout()
+  fig.savefig(str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_wind_history.png", bbox_inches='tight')
+  plt.close(fig)
+
+  # temperature
+  # water
+  pass
+
+
+def generate_prediction_graphs():
+  logging.info("#generate_prediction_graphs()")
+  # wind
+  # temperature
+  # water
+  pass
+
+
 def generate_spline(measurements : list(Measurement), station : str, time_range, ylabel_name : str, showPlot = False, imagePath = None):
   """
   create single or multible splines from a specific time range in one chart
