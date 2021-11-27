@@ -127,6 +127,8 @@ if __name__ == "__main__":
     logging.info("Programm has started")
 
     weatherimport.init()
+    weatherimport.generate_today_graphs()
+    weatherimport.generate_last_7_days_graphs()
 
     schedule.every(5).seconds.do(weatherimport.generate_last_7_days_graphs)
 

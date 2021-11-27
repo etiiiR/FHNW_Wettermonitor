@@ -167,41 +167,48 @@ def get_measurements(measurements : list(Measurement), station : str, time_range
 
   return df
 
+# generate plots 
+
 # TODO maybe move this to a different file.
+
+# Colors from https://coolors.co/264653-2a9d8f-e9c46a-f4a261-e76f51
+colors = {
+  "blue":      "#264653",
+  "turquoise": "#2A9D8F",
+  "yellow":    "#E9C46A",
+  "orange":    "#F4A261",
+  "red":       "#E76F51"
+}
+
 wind_measurements = [Measurement.Wind_speed_avg_10min,
                      Measurement.Wind_gust_max_10min,
                      Measurement.Wind_force_avg_10min,
                      Measurement.Wind_direction] # currently not plotted, since plotting is not that easy and therefore out of scope
 
-#generate chart
-def generate_today_graphs():
-  logging.info("#generate_today_graphs()")
+def get_graph_location():
+  return str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs"
 
-  # wind
-  # temperature
-  # water
-  return schedule.CancelJob
+def generate_wind_graph(station, type):
+  if type != "history" and type != "today":
+    raise Exception(f"Unknown type: {type}")
 
+  wind = get_measurements(wind_measurements, station, "7d" if type == "history" else "1d")
+  if type == "history":
+    # aggregate window every 1 hour
+    wind = wind.resample('H', on='time').agg(
+      { Measurement.Wind_speed_avg_10min.value:'mean',
+        Measurement.Wind_gust_max_10min .value:'max',
+        Measurement.Wind_force_avg_10min.value:'median',
+        Measurement.Wind_direction      .value:'median'})
 
-def generate_last_7_days_graphs():
-  logging.info("#generate_last_7_days_graphs()")
-  # wind
-  wind_tiefenbrunnen = get_measurements(wind_measurements, "tiefenbrunnen", "7d")
-  # aggregate window every 1 hour
-  wind_tiefenbrunnen = wind_tiefenbrunnen.resample('H', on='time').agg(
-    { Measurement.Wind_speed_avg_10min.value:'mean',
-      Measurement.Wind_gust_max_10min .value:'max',
-      Measurement.Wind_force_avg_10min.value:'median',
-      Measurement.Wind_direction      .value:'median'})
-
-  wind_tiefenbrunnen["time"] = wind_tiefenbrunnen.index
-  wind_tiefenbrunnen = wind_tiefenbrunnen.reset_index(drop = True)
+    wind["time"] = wind.index
+    wind = wind.reset_index(drop = True)
 
   fig, ax1 = plt.subplots(figsize=(12,5))
 
   # first y-Axis
-  ax1.plot(wind_tiefenbrunnen['time'], wind_tiefenbrunnen[Measurement.Wind_speed_avg_10min.value], color="#264653") # Colors from https://coolors.co/264653-2a9d8f-e9c46a-f4a261-e76f51
-  ax1.plot(wind_tiefenbrunnen['time'], wind_tiefenbrunnen[Measurement.Wind_gust_max_10min .value], color="#2A9D8F")
+  ax1.plot(wind['time'], wind[Measurement.Wind_speed_avg_10min.value], color=colors["blue"])
+  ax1.plot(wind['time'], wind[Measurement.Wind_gust_max_10min .value], color=colors["turquoise"])
   # expand the limits to make sure y=0, y=10 are on the axis
   bottom, top = ax1.get_ylim()
   ax1.set_ylim(bottom if bottom < 0 else 0, top if top > 10 else 10)
@@ -210,7 +217,7 @@ def generate_last_7_days_graphs():
 
   # second y-Axis
   ax2 = ax1.twinx()
-  ax2.plot(wind_tiefenbrunnen['time'], wind_tiefenbrunnen[Measurement.Wind_force_avg_10min.value], color="#E9C46A", alpha=0.75)
+  ax2.plot(wind['time'], wind[Measurement.Wind_force_avg_10min.value], color=colors["yellow"], alpha=0.75)
   # expand the limits to make sure y=0, y=7 are on the axis
   bottom, top = ax2.get_ylim()
   ax2.set_ylim(bottom if bottom < 0 else 0, top if top > 7 else 7)
@@ -219,14 +226,33 @@ def generate_last_7_days_graphs():
 
   # x-Axis
   ax1.set_xlabel('Zeit')
-  ax1.xaxis.set_major_formatter(mdates.DateFormatter('%A, %d %b'))
+  if type == "history":
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter('%A, %d %b'))
+  else:
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+
   for label in ax1.get_xticklabels(which='major'):
       label.set(rotation=30, horizontalalignment='right')
 
   fig.tight_layout()
-  fig.savefig(str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_wind_history.png", bbox_inches='tight')
+  fig.savefig(get_graph_location() + f"/{station}_wind_{type}.png", bbox_inches='tight')
   plt.close(fig)
 
+
+def generate_today_graphs():
+  logging.info("#generate_today_graphs()")
+  # wind
+  generate_wind_graph("tiefenbrunnen", "today")
+  generate_wind_graph("mythenquai", "today")
+  # temperature
+  # water
+  return schedule.CancelJob
+
+def generate_last_7_days_graphs():
+  logging.info("#generate_last_7_days_graphs()")
+  # wind
+  generate_wind_graph("tiefenbrunnen", "history")
+  generate_wind_graph("mythenquai", "history")
   # temperature
   # water
   pass
