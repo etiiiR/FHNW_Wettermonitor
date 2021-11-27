@@ -19,7 +19,7 @@ influx_db = InfluxDB(app=app)
 ui = FlaskUI(app, fullscreen=True, width=600, height=500, start_server='flask')
 
 def get_weather_store_in_data(data):
-    #todo get Weather from influx and store it in the Context to refresh the / Route and show the weather
+    # TODO get Weather from influx and store it in the Context to refresh the / Route and show the weather
     data = data
 
 def update_data():
@@ -118,11 +118,8 @@ def wetterstation_details(station: str, category: str, type: str):
         refresh_seconds = 600 - int((time.time()+300) % 600) + 20 # add 20 seconds to compensate for inaccuracy
     )
 
-def run():
-    ui.run()
-
 if __name__ == "__main__":
-
+    # TODO check if production, then only log warnings
     logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(asctime)s - %(message)s')
     logging.info("Programm has started")
 
@@ -136,8 +133,8 @@ if __name__ == "__main__":
     schedule.every().day.at("00:30").do(weatherimport.generate_last_7_days_graphs)
     schedule.every().day.at("01:00").do(weatherimport.generate_prediction_graphs)
     
-    # matplotlib needs to run in the main thread
-    threading.Thread(target=run).start()
+    # matplotlib needs to run in the main thread, because that dumbass library is not thread safe and it will print warning messages like 20 atomic bombs have been detonated and it's the ending of humanity.
+    threading.Thread(target=ui.run).start()
     
     check_for_pending_jobs()
 
