@@ -26,12 +26,21 @@ Die Anleitung wurde mit folgender Hardware/Software getestet:
 ## Software insallieren
 ### Software aktualisieren
 ```bash
-sudo apt-get update && sudo apt-get install
+sudo apt-get purge wolfram-engine scratch scratch2 nuscratch sonic-pi idle3 -y
+sudo apt-get purge smartsim java-common minecraft-pi libreoffice* -y
+# TODO java-common kann nicht entfernt werden
+
+sudo apt-get clean
+sudo apt-get autoremove -y
+
+sudo apt-get update
+sudo apt-get upgrade
+sudo apt-get install
 ```
 
 ### InfluxDB
 ```bash
-sudo apt-get update && sudo apt-get install influxdb
+sudo apt-get install influxdb
 sudo systemctl unmask influxdb.service
 sudo systemctl start influxdb
 
@@ -72,20 +81,31 @@ pip install -r weather_app/requirements.txt
 ```
 
 ### Wettermonitor initialisieren
+TODO remove
 ```bash
 python weather_app/main.py
 ```
 
 ### Wettermonitor automatisch starten
 ```bash
+sudo apt-get install xdotool unclutter sed
+
+# sudo raspi-config make sure desktop autologin is set.
+
+cp kiosk.service /lib/systemd/system/kiosk.service
+sudo systemctl enable kiosk.service
+sudo systemctl start kiosk.service
+# sudo systemctl status kiosk.service
+
+
+# See: https://pimylifeup.com/raspberry-pi-kiosk/ but the service should wait for FHNW-Wettermonitor-Server
+
+# add this: https://medium.com/@benmorel/creating-a-linux-service-with-systemd-611b5c8b91d6
+
 # 1. main.py ausführen
 # 2. chrome im kiosk mode öffnen
 # überprüfen, dass influx sicher zuerst gestartet wird.
 # vielleicht als service installieren: https://medium.com/codex/setup-a-python-script-as-a-service-through-systemctl-systemd-f0cc55a42267
 
-/usr/bin/python weather_app/main.py
 
-```
-
-```bash
 ```
