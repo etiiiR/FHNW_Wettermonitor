@@ -54,10 +54,10 @@ cd FHNW_Wettermonitor
 
 
 echo "installing python dependencies"
-sudo pip install influxdb
-sudo pip install pandas
+sudo /bin/python -m pip install influxdb
+sudo /bin/python -m pip install pandas
 
-pip install -r weather_app/requirements.txt
+sudo /bin/python -m pip install -r weather_app/requirements.txt
 
 
 
@@ -65,6 +65,9 @@ pip install -r weather_app/requirements.txt
 echo "installing wettermonitor as a service"
 sudo apt-get install xdotool unclutter sed
 
-cp kiosk.service /lib/systemd/system/kiosk.service
+echo "copy service"
+sudo cp kiosk.service /lib/systemd/system/kiosk.service
+echo "enable service"
 sudo systemctl enable kiosk.service
+echo "start service"
 sudo systemctl start kiosk.service
