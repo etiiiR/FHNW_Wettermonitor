@@ -35,8 +35,7 @@ curl -s https://raw.githubusercontent.com/etiiiR/FHNW_Wettermonitor/main/install
 ### Software aktualisieren
 ```bash
 sudo apt-get purge wolfram-engine scratch scratch2 nuscratch sonic-pi idle3 -y
-sudo apt-get purge smartsim java-common minecraft-pi libreoffice* -y
-# TODO java-common kann nicht entfernt werden
+sudo apt-get purge smartsim minecraft-pi libreoffice* -y
 
 sudo apt-get clean
 sudo apt-get autoremove -y
@@ -116,4 +115,10 @@ sudo systemctl start kiosk.service
 # vielleicht als service installieren: https://medium.com/codex/setup-a-python-script-as-a-service-through-systemctl-systemd-f0cc55a42267
 
 
+```
+
+# Aktualisieren
+```bash
+cd ~/FHNW_Wettermonitor
+git pull
 ```
