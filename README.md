@@ -1,19 +1,33 @@
 # FHNW_Wettermonitor
 
-## Start
+# Installation
+Siehe [INSTALLATION.md](INSTALLATION.md)
 
-### Install
-pip install -r requirements.txt
+# Entwickeln
+```
+pip install -r weather_app/requirements.txt
+```
 
-## Zukünftiges Design
+# Betrieb
+TODO:
+ - Bedienungsanleitung
+ - Wo Log ansehen?
+ - Wie service starten/stoppen?
+
+# Zukünftiges Design
 ![alt text](ui-sketch-1.png)
 
-### Detailansicht Wind, Temperaturen und Wasser
+## Detailansicht Wind, Temperaturen und Wasser
 ![alt text](ui-sketch-2.png)
 
-### Detailansicht Warnungen und Diverses
+## Detailansicht Warnungen und Diverses
 ![alt text](ui-sketch-3.png)
 
+## weitere Features
+ - Sonnenaufgang und Sonnenuntergang anzeigen
+ - Warnungen von Swissmeteo darstellen
+ - Wettermonitor nicht im Userverzeichnis installieren
+ - Production ready Webserver für Flask verwenden
 
 # Analyse tecdottir-API
 Die Frage ist, publiziert die tecdottir-API die Daten immer pünktlich zu den vollen 10 Minuten?
@@ -50,8 +64,6 @@ while True:
             print("mythenquai    " + str(current_time) + " " + str(length_mythenquai) + " " + results[length_mythenquai-1]["timestamp"])
     # no DOS attacks from FHNW
     time.sleep(1)
-
-
 ```
 Wir haben das Script 21 Stunden laufen lasse (Resultat [hier](response_time.txt))
 
