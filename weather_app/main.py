@@ -4,7 +4,7 @@ import schedule
 import logging
 from typing import Match
 from flask import Flask  
-from flask import render_template, redirect, url_for
+from flask import render_template, redirect
 
 from flaskwebgui import FlaskUI
 #https://github.com/btashton/flask-influxdb
@@ -32,12 +32,7 @@ def update_data():
 
 def check_for_pending_jobs():
     while 1:
-        n = schedule.idle_seconds()
-        if n is None:
-            n = 1
-        if n > 0:
-            # sleep exactly the right amount of time
-            time.sleep(n)
+        time.sleep(1)
         schedule.run_pending()
 
 
