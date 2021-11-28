@@ -20,10 +20,8 @@ Die Anleitung wurde mit folgender Hardware/Software getestet:
    3. Aktualisieren Sie die Software im Willkommensdialog (dauert einige Minuten)
 2. Neustarten
 3. Im Terminal `sudo raspi-config` ausführen.
-   1. Tab System auswählen
-      1. Sicherstellen, dass bei "Boot" "Zum Desktop" selektiert ist.
-      2. Sicherstellen, dass bei "Automatische Anmeldung" "Als Benutzer 'pi' anmelden" selektiert ist.
-   2. Mit "Ok" Dialog schliessen
+   1. `1 System Options` > `S4 Boot / Auto Login` > `B4 Desktop Autologin` selektieren und Enter drücken.
+   2. Mit "Finish" Dialog schliessen. Es ist kein Neustart notwendig.
 
 ## Installation via Script
 Im Terminal folgender Befehl ausführen:
@@ -113,8 +111,6 @@ sudo systemctl start kiosk.service
 # 2. chrome im kiosk mode öffnen
 # überprüfen, dass influx sicher zuerst gestartet wird.
 # vielleicht als service installieren: https://medium.com/codex/setup-a-python-script-as-a-service-through-systemctl-systemd-f0cc55a42267
-
-
 ```
 
 # Aktualisieren
