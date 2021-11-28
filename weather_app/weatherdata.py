@@ -9,6 +9,7 @@ Authors:
 Fabian Märki, Jelle Schutter, Lucas Brönnimann
 """
 
+import logging
 import influxdb
 import pandas as pd
 from pandas import json_normalize
@@ -192,9 +193,18 @@ def connect_db(config):
     if config.client is None: #if you havent already created a client
         # https://www.influxdata.com/blog/getting-started-python-influxdb/
         config.client = DataFrameClient(host = config.db_host, port = config.db_port) #connect to database
+        # influxdb may not have finished startup yet
+        influx_is_running = False
+        while not influx_is_running:
+            try:
+                logging.info("InfluxDB is up and running. InfluxDB Version: " + str(config.client.ping()))
+                influx_is_running = True
+            except:
+                logging.warning("InfluxDB is not running")
+
         config.client.create_database(config.db_name) #create a new database
         config.client.switch_database(config.db_name) #select created database
-    print("Successfully connected to DB")
+    logging.info("Successfully connected to DB")
 
 def clean_db(config):
     """Drops the whole database and creates it again

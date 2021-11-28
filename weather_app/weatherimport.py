@@ -12,6 +12,7 @@ import enum
 import locale
 from pathlib import Path
 from windrose import WindroseAxes
+import shutil
 
 #import warnings
 #warnings.simplefilter("error")
@@ -33,17 +34,15 @@ class Measurement(enum.Enum):
   Radiation = "global_radiation"
 
 
-
 config = wd.Config()
 systemInitialized = False #True if database successfully initialized 
-
-def systemInitialized():
-  return systemInitialized
 
 def init():
   """
   connect to db, import historic data if not imported, import latest data (no periodic read)
   """
+  global systemInitialized
+
   locale.setlocale(locale.LC_ALL, 'de_DE') # formats dates on plots correct
   
   wd.connect_db(config)
@@ -56,11 +55,8 @@ def init():
     print("Database successfully initialized.")
     systemInitialized = True
     return systemInitialized
-
   else:
-    print("Database partially initialized... Database working but CSV file not importet!!!")
-    systemInitialized = False
-    return systemInitialized
+    raise Exception("Couldn't find csv files to import")
   
 
 
@@ -187,6 +183,14 @@ wind_measurements = [Measurement.Wind_speed_avg_10min,
 
 def get_graph_location():
   return str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs"
+
+def reset_graphs():
+  # replace possible old graphs with a message
+  static_images = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images"
+  for station in ["tiefenbrunnen", "mythenquai"]:
+      for category in ["wind", "temperature", "water"]:
+          for type in ["today", "tomorrow", "history"]:
+              shutil.copyfile(static_images+"/generating_plot.png", f"{get_graph_location()}/{station}_{category}_{type}.png")
 
 def generate_wind_graph(station, type):
   if type != "history" and type != "today":
