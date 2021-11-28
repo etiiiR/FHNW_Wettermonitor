@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 import time
 import schedule
 import logging
-from typing import Match
 from flask import Flask  
 from flask import render_template, redirect
 
