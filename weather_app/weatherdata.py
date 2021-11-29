@@ -10,7 +10,6 @@ Fabian Märki, Jelle Schutter, Lucas Brönnimann
 """
 
 import logging
-import influxdb
 import pandas as pd
 from pandas import json_normalize
 import numpy as np
@@ -57,7 +56,7 @@ class Config:
     client = None #database client
 
 def say_goodbye():
-    print('bye')
+    logging.info('bye')
 
 def __set_last_db_entry(config, station, entry):
     current_last_time = __extract_last_db_day(config.stations_last_entries.get(station, None), station, None) #get date of "stations_last_entries" from "station"
@@ -81,7 +80,7 @@ def __get_last_db_entry(config, station):
             last_entry = config.client.query(query)
         except:
             # There are influxDB versions which have an issue with above query
-            print('An exception occurred while querying last entry from DB for ' + station + '. Try alternative approach.')
+            logging.error('An exception occurred while querying last entry from DB for ' + station + '. Try alternative approach.')
             query = f'SELECT * FROM {station} ORDER BY time DESC LIMIT 1'
             last_entry = config.client.query(query)
 
@@ -106,7 +105,7 @@ def __get_data_of_day(day, station, periodic_retry = False):
     # convert to local time of station
     base_url = 'https://tecdottir.herokuapp.com/measurements/{}'
     day_str = day.strftime('%Y-%m-%d')
-    print('Query ' + station + ' at ' + day_str)
+    logging.info('Query ' + station + ' at ' + day_str)
     payload = {
         'startDate': day_str,
         'endDate': day_str
@@ -126,7 +125,7 @@ def __get_data_of_day(day, station, periodic_retry = False):
             if periodic_retry:
                 raise e
 
-            print(f'Request for \'{e.request.url}\' failed. ({e})\nTrying again in 10 seconds...')
+            logging.warning(f'Request for \'{e.request.url}\' failed. ({e})\nTrying again in 10 seconds...')
             time.sleep(10)
 
 def __define_types(data : pandas.DataFrame, date_format):
@@ -230,19 +229,19 @@ def try_import_csv_file(config, station, file_name):
     False: CSV failed to import (csv file not found)
     """
     if __is_csv_imported(config, station):
-        print(file_name + ' already imported.')
+        logging.info(file_name + ' already imported.')
         return True
 
     if os.path.isfile(file_name): #does the path point to a file?
-        print('\tLoad ' + file_name)
+        logging.info('\tLoad ' + file_name)
         for chunk in pd.read_csv(file_name, delimiter = ',', chunksize = config.historic_data_chunksize): #read the csv file in chunks
             chunk = __define_types(chunk, '%Y-%m-%dT%H:%M:%S') #preprocess data
-            print('Add ' + station + ' from ' + str(chunk.index[0]) + ' to ' + str(chunk.index[-1]))
+            logging.info('Add ' + station + ' from ' + str(chunk.index[0]) + ' to ' + str(chunk.index[-1]))
             __add_data_to_db(config, chunk, station) #add data to database
 
         return True
     else:
-        print(file_name + ' does not seem to exist.')
+        logging.error(file_name + ' does not seem to exist.')
         return False
 
 
@@ -274,7 +273,7 @@ def import_latest_data(config, periodic_read = False, callback = update.update_d
     #set signal handler if periodic read available
     if periodic_read and threading.current_thread() is threading.main_thread():
         signal.signal(signal.SIGINT, __signal_handler)
-        print('\nPress Ctrl+C to stop!\n')
+        logging.info('\nPress Ctrl+C to stop!\n')
 
     check_db_day = min(last_db_days) #get oldest date of newest entries
     check_db_day = check_db_day.replace(hour = 0, minute = 0, second = 0, microsecond = 0) #extract date (day) only
@@ -291,7 +290,7 @@ def import_latest_data(config, periodic_read = False, callback = update.update_d
             current_time = datetime.utcnow() + timedelta(hours = 1)
             sleep_until = current_time + timedelta(seconds = sleep_seconds, microseconds=0)
 
-            print('Sleep for ' + str(sleep_seconds) + 's (from ' + str(current_time) + ' until ' + str(sleep_until) + ') when next data will be queried.')
+            logging.info('Sleep for ' + str(sleep_seconds) + 's (from ' + str(current_time) + ' until ' + str(sleep_until) + ') when next data will be queried.')
             time.sleep(sleep_seconds)
             current_day = current_time.replace(hour = 0, minute = 0, second = 0, microsecond = 0)
 
@@ -311,21 +310,21 @@ def import_latest_data(config, periodic_read = False, callback = update.update_d
                 data_of_last_db_day = __get_data_of_day(check_db_day, station, periodic_read) #get data of station (whole day)
 
             except Exception as e:
-                print(f"Connection to station {station} failed... skipped!")
+                logging.warning(f"Connection to station {station} failed... skipped!")
                 continue
 
             normalized_data = __clean_data(config, data_of_last_db_day, last_db_entry, station) #extract data, that is not stored yet
 
             if normalized_data.size > 0: #if new data is available
                 __add_data_to_db(config, normalized_data, station) #add data to database
-                print('Handle ' + station + ' from ' + str(normalized_data.index[0]) + ' to ' + str(normalized_data.index[-1]))
+                logging.info('Handle ' + station + ' from ' + str(normalized_data.index[0]) + ' to ' + str(normalized_data.index[-1]))
 
                 #do a callback if vailable
                 if callback:
                     callback()
 
             else:
-                print('No new data received for ' + station)
+                logging.info('No new data received for ' + station)
 
         if check_db_day < current_day: #new day arrived
             check_db_day = check_db_day + pd.DateOffset(1) #add day 

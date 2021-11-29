@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 import os
 import logging
 import schedule
@@ -6,7 +6,6 @@ import numpy as np
 import weatherdata as wd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import matplotlib.ticker as ticker
 import pandas as pd
 import enum
 import locale
@@ -52,7 +51,7 @@ def init():
   if (wd.try_import_csv_file(config, 'mythenquai',    root + "/Messwerte/messwerte_mythenquai_2007-2020.csv") and
       wd.try_import_csv_file(config, 'tiefenbrunnen', root + "/Messwerte/messwerte_tiefenbrunnen_2007-2020.csv")):
     wd.import_latest_data(config, periodic_read=False)
-    print("Database successfully initialized.")
+    logging.info("Database successfully initialized.")
     systemInitialized = True
     return systemInitialized
   else:
@@ -475,11 +474,11 @@ def construct_window_vector_old(df: pd.DataFrame, lim_weight: list, normalize_to
       #range check
       if item < min:
         temp_vector[index_item] = -1 * weight
-        print(f"Warning: Value: {item} in column: {df.columns[index_item]} lower than allowed... set to ", -1 * weight)
+        logging.warning(f"Warning: Value: {item} in column: {df.columns[index_item]} lower than allowed... set to ", -1 * weight)
 
       elif item > max:
         temp_vector[index_item] = weight
-        print(f"Warning: Value: {item} in column: {df.columns[index_item]} higher than allowed... set to", weight)
+        logging.warning(f"Warning: Value: {item} in column: {df.columns[index_item]} higher than allowed... set to", weight)
 
       else:
         temp_vector[index_item] = (((normalize_to_plusMinus * 2 * item) / (max - min)) + ((-1 * normalize_to_plusMinus) - ((normalize_to_plusMinus * 2 * min) / (max - min)))) * weight #linearisierung für: item == max -> 1, item == min -> -1, zwischenresultat * weight -> resultat
@@ -532,11 +531,11 @@ def construct_window_vector(df: pd.DataFrame, lim_weight: list, normalize_to_plu
       #range check
       if delta < min:
         vector[index_item] = -1 * weight
-        print(f"Warning: Value: {delta} in column: {df.columns[index_item]} lower than allowed... set to ", -1 * weight)
+        logging.warning(f"Warning: Value: {delta} in column: {df.columns[index_item]} lower than allowed... set to ", -1 * weight)
 
       elif delta > max:
         vector[index_item] = weight
-        print(f"Warning: Value: {delta} in column: {df.columns[index_item]} higher than allowed... set to", weight)
+        logging.warning(f"Warning: Value: {delta} in column: {df.columns[index_item]} higher than allowed... set to", weight)
 
       else:
         vector[index_item] = (((normalize_to_plusMinus * 2 * delta) / (max - min)) + ((-1 * normalize_to_plusMinus) - ((normalize_to_plusMinus * 2 * min) / (max - min)))) * weight #linearisierung für: item == max -> 1, item == min -> -1, zwischenresultat * weight -> resultat
@@ -561,7 +560,7 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
   if len(measurements) <= 1:
     raise Exception("Its not possible to calculate a cosinus simularity in one dimension... Please add more measurements!")
 
-  print("Start nearest neighbour calculation...")
+  logging.info("Start nearest neighbour calculation...")
 
   measurements_converted = [measurement.value for measurement in measurements] #convert measurements
 
@@ -588,7 +587,7 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
       len_vector= np.sqrt(sum([vector[i] ** 2 for i in range(0, len(vector))])) #calculate length of vectorToday 
       vector_today_windowed_dict[index.strftime("%H:%M:%S")] = (vector, len_vector) #append vector and length to dict
     except ValueError as ex:
-      print("Warning!!! the day we are searching for has empty values... number of window will be shortened -> this can lead to more unprecisely predictions")
+      logging.error("Warning!!! the day we are searching for has empty values... number of window will be shortened -> this can lead to more unprecisely predictions")
     
   if not vector_today_windowed_dict:
     raise Exception("The day we are searching for cannot be vectorized... stopped searching!")
@@ -603,7 +602,7 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
     time =  index
 
     if datetime(time.year, time.month, time.day) == dateOnly: #reference day found
-      #print("reference day found:", datetime(time.year, time.month, time.day))
+      #logging.info("reference day found:", datetime(time.year, time.month, time.day))
       continue
 
     table_day = table_hist_day #rename
@@ -624,7 +623,7 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
 
       #if window not found (failure in )
       if not window:
-        print("Searching day vector not found (this is resulting due an error while creating the window vectors of our searching day)... Ignore this window")
+        logging.warning("Searching day vector not found (this is resulting due an error while creating the window vectors of our searching day)... Ignore this window")
         continue
       searchVector = window[0]
       length_searchVector = window[1]
@@ -633,13 +632,13 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
       try:
         vector = construct_window_vector(table.drop(["time"], axis = 1), vector_lim_weight) #remove time attribute and calculate vector
       except ValueError as ex:
-        print(ex)
-        print("Window vector couldnt be created... Ignore this window")
+        logging.error(ex)
+        logging.error("Window vector couldnt be created... Ignore this window")
         continue
       
 
       if len(vector) != len(searchVector):
-        print(window)
+        logging.info(window)
         raise Exception("Vectors don't have equal length")
 
       scalarProd = sum([vector[i] * searchVector[i] for i in range(0, len(vector))]) #calculate scalar product of window
@@ -674,9 +673,9 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
     progress_counter += 1
 
     if progress_counter in progress_steps:
-      print(progress_steps.index(progress_counter) * 10,"% reached")
+      logging.info(progress_steps.index(progress_counter) * 10,"% reached")
   
-  print("Most similar day found: ", best_date, " nearest neighbour calculation finished :)")
+  logging.info("Most similar day found: ", best_date, " nearest neighbour calculation finished :)")
 
   return best_date
 
@@ -706,7 +705,7 @@ def forecast_of_tomorrow(station: str, date_searchBestRecord: datetime):
 
   #if not enough measurements available (min: >= 2)
   if len(indexAvailable) <= 1:
-    print("Not enough attributes available to do the nearest neighbour!")
+    logging.error("Not enough attributes available to do the nearest neighbour!")
     return None
       
   #get measurements to observe

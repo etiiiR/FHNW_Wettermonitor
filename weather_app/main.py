@@ -1,7 +1,10 @@
 from datetime import datetime, timedelta
+import os
+from pathlib import Path
 import time
 import schedule
 import logging
+import logging.handlers
 from flask import Flask  
 from flask import render_template, redirect
 
@@ -115,7 +118,15 @@ def wetterstation_details(station: str, category: str, type: str):
 
 
 if __name__ == "__main__":
-    # TODO write to log file, but only warnings and higher
+    handler = logging.handlers.RotatingFileHandler(
+       str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/wettermonitor.log",
+       maxBytes=(1048576),
+       backupCount=8
+    )
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    handler.setFormatter(formatter)
+    logging.getLogger().addHandler(handler)
+
     logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(asctime)s - %(message)s')
     logging.info("Program has started")
 
