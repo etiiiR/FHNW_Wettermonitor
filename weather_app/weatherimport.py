@@ -673,9 +673,9 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
     progress_counter += 1
 
     if progress_counter in progress_steps:
-      logging.info(progress_steps.index(progress_counter) * 10,"% reached")
+      logging.info(str(progress_steps.index(progress_counter) * 10) + "% reached")
   
-  logging.info("Most similar day found: ", best_date, " nearest neighbour calculation finished :)")
+  logging.info("Most similar day found: "+ str(best_date) +" nearest neighbour calculation finished :)")
 
   return best_date
 
@@ -692,7 +692,7 @@ def forecast_of_tomorrow(station: str, date_searchBestRecord: datetime):
   """
 
   possibleMeasurements = [Measurement.Air_temp, Measurement.Humidity]
-  config_possibleMeasurements = [(-10, 10, 0.5), (-40, 40, 0.3)]
+  config_possibleMeasurements = [(-10, 10, 1), (-40, 40, 0.2)]
   
   dateOnly = datetime(date_searchBestRecord.year, date_searchBestRecord.month, date_searchBestRecord.day) #get date of date_searchBestRecord only
   test_measurement = get_all_measurements(station, (dateOnly, datetime(dateOnly.year, dateOnly.month, dateOnly.day, hour = 23, minute = 59, second = 59)), timeFilling=False)

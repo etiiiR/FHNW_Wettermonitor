@@ -1,9 +1,11 @@
 from datetime import datetime
+from datetime import timedelta
 from pandas.io.pytables import Table
 import weatherimport as wd
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import random
 
 wd.init()
 #print(wd.get_all_measurements("mythenquai", "1d"))
@@ -33,20 +35,20 @@ wd.init()
 
 
 #forecast: neirest neibour
-dateToCheck = datetime(2021, 11, 25)
-bestDate = wd.forecast_of_tomorrow("mythenquai", dateToCheck)[0]
-print("DateFound: ", bestDate)
-
-show_measurements = [wd.Measurement.Air_temp, wd.Measurement.Humidity]
-df1 = wd.get_measurements(show_measurements, "mythenquai", (dateToCheck, datetime(dateToCheck.year, dateToCheck.month, dateToCheck.day, 23, 59)))
-df2 = wd.get_measurements(show_measurements, "mythenquai", (bestDate, datetime(bestDate.year, bestDate.month, bestDate.day, 23, 59)))
-fig, axs = plt.subplots(len(show_measurements), 2)
-for i in range(0, len(show_measurements)):
-    axs[i, 0].plot(df1["time"].values, df1[show_measurements[i].value].values)
-    axs[i, 1].plot(df2["time"].values, df2[show_measurements[i].value].values)
-    axs[i, 0].set_title(show_measurements[i].name)
-    axs[i, 1].set_title(show_measurements[i].name)
-plt.show()
+#dateToCheck = datetime(2021, 11, 25)
+#bestDate = wd.forecast_of_tomorrow("mythenquai", dateToCheck)[0]
+#print("DateFound: ", bestDate)
+#
+#show_measurements = [wd.Measurement.Air_temp, wd.Measurement.Humidity]
+#df1 = wd.get_measurements(show_measurements, "mythenquai", (dateToCheck, datetime(dateToCheck.year, dateToCheck.month, dateToCheck.day, 23, 59)))
+#df2 = wd.get_measurements(show_measurements, "mythenquai", (bestDate, datetime(bestDate.year, bestDate.month, bestDate.day, 23, 59)))
+#fig, axs = plt.subplots(len(show_measurements), 2)
+#for i in range(0, len(show_measurements)):
+#    axs[i, 0].plot(df1["time"].values, df1[show_measurements[i].value].values)
+#    axs[i, 1].plot(df2["time"].values, df2[show_measurements[i].value].values)
+#    axs[i, 0].set_title(show_measurements[i].name)
+#    axs[i, 1].set_title(show_measurements[i].name)
+#plt.show()
 
 
 #test of construct_day_vector function
@@ -79,3 +81,53 @@ plt.show()
 #print(table_day)
 #print(wd.construct_day_vector(table_day, [(0, 5, 1), (0, 3, 1)]))
 #print(wd.construct_day_vector_old(table_day1, [(0, 5, 1), (0, 3, 1)]))
+
+def generateRandomDate(startDate, endDate) -> datetime:
+    time_between_dates = endDate - startDate
+    days_between_dates = time_between_dates.days
+
+    random_number_of_days = random.randrange(days_between_dates)
+    return startDate + timedelta(days=random_number_of_days)
+
+numberOfDates = 10
+startDate = datetime(2008, 1, 1)
+endDate = datetime(2020, 12, 1)
+
+dates = []
+random.seed(1234)
+for i in range(0, numberOfDates):
+    date = generateRandomDate(startDate, endDate)
+    dates.append(datetime(date.year, date.month, date.day))
+
+predictions = []
+for date in dates:
+    prediction = wd.forecast_of_tomorrow("mythenquai", date)[0]
+    predictions.append((date, prediction))
+
+#comparison
+nextDateAlgorithm = []
+nearestNeighbourAlgorithm = []
+for prediction in predictions:
+    targetDate = prediction[0]
+    targetTimeRange =  (datetime(targetDate.year, targetDate.month, targetDate.day, 0, 0, 1), datetime(targetDate.year, targetDate.month, targetDate.day, 23, 59, 59)) 
+    nearestNDate = prediction[1]
+    nearestNDateTimeRange =  (datetime(nearestNDate.year, nearestNDate.month, nearestNDate.day, 0, 0, 1), datetime(nearestNDate.year, nearestNDate.month, nearestNDate.day, 23, 59, 59)) 
+    nextDate = targetDate + timedelta(days=1)
+    nextDateTimeRange =  (datetime(nextDate.year, nextDate.month, nextDate.day, 0, 0, 1), datetime(nextDate.year, nextDate.month, nextDate.day, 23, 59, 59)) 
+    
+    data_target = wd.get_measurement(wd.Measurement.Air_temp, "mythenquai", targetTimeRange)
+    data_nearestN = wd.get_measurement(wd.Measurement.Air_temp, "mythenquai", nearestNDateTimeRange)
+    data_nextDate = wd.get_measurement(wd.Measurement.Air_temp, "mythenquai", nextDateTimeRange)
+
+    mean_temp_target = np.nanmean(data_target["air_temperature"].tolist())
+    mean_temp_nearestN = np.nanmean(data_nearestN["air_temperature"].tolist())
+    mean_temp_data_nextDate = np.nanmean(data_nextDate["air_temperature"].tolist())
+
+    difference_nearestN = np.abs(mean_temp_target - mean_temp_nearestN)
+    difference_nextDate = np.abs(mean_temp_target - mean_temp_data_nextDate)
+
+    nearestNeighbourAlgorithm.append(difference_nearestN)
+    nextDateAlgorithm.append(difference_nextDate)
+
+print("Accuracy nearest neighbour: +-", np.mean(nearestNeighbourAlgorithm), " °C")
+print("Accuracy next date: +-", np.mean(nextDateAlgorithm), " °C")
