@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import os
 import logging
+from signal import default_int_handler
 import schedule
 import numpy as np
 import weatherdata as wd
@@ -499,7 +500,7 @@ def construct_window_vector(df: pd.DataFrame, lim_weight: list, normalize_to_plu
   if df.empty:
     raise ValueError("Empty dataframe received")
 
-  df = df.dropna() #remove measurements with missing values
+  ##########################df = df.dropna() #remove measurements with missing values (not needed anymore)
   vector = np.empty(len(df.columns)) #create an empty vector with the length of the dataframe
 
   if df.empty:
@@ -510,24 +511,32 @@ def construct_window_vector(df: pd.DataFrame, lim_weight: list, normalize_to_plu
   if type(df.index[-1]) != pd.Timestamp or type(df.index[0]) != pd.Timestamp:
     raise Exception("Index has wrong format!!!")
 
-  num_of_10min_steps =  int((df.index[-1] - df.index[0]).total_seconds() / (10 * 60)) #calculate number of 10 min steps
-
-  if num_of_10min_steps == 0:
-    raise ValueError("This window is containing one observation only after deleting all observations containing NA")
-
   vector = np.empty(len(df.columns)) #create an empty vector with the length of the dataframe
   for index_item in range(0, len(df.columns)): #iterate over attributes
+      column = df.iloc[:, index_item] #get column and reset index
+
+      first_valid_index = column.first_valid_index()
+      last_valid_index = column.last_valid_index()
+
+      if (first_valid_index is None) or (last_valid_index is None):
+        raise ValueError("An attribute of this window doesn't contain data!")
+      
+      oldest_valid_value = column.loc[first_valid_index] #get first (oldest measurement) element of column with a valid value (not nan)
+      newest_valid_value = column.loc[last_valid_index] #get last (newest measurement) element of column with a valid value (not nan)
+
+      num_of_10min_steps =  int((last_valid_index - first_valid_index).total_seconds() / (10 * 60)) #calculate number of 10 min steps between measurements
+
+      if num_of_10min_steps == 0: #if window only containing one observation
+        raise ValueError("An attribute of this window only contains one datapoint!")
+
       #extract limitations
       min = lim_weight[index_item][0] * num_of_10min_steps
       max = lim_weight[index_item][1] * num_of_10min_steps
       weight = lim_weight[index_item][2]
 
-      #extract observations
-      first_observation = df.iat[0, index_item] #get first observation
-      last_observation = df.iat[-1, index_item] #get last observation
 
-      delta = last_observation - first_observation #calculate difference
-  
+      delta = newest_valid_value - oldest_valid_value #calculate difference
+      
       #range check
       if delta < min:
         vector[index_item] = -1 * weight

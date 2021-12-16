@@ -26,6 +26,7 @@ import os
 import threading
 from collections import deque
 from requests.models import HTTPError
+import calendar
 import main as update
 
 
@@ -441,14 +442,41 @@ def get_multible_attr_entries_yearlyWindow(config, attributes, station, targetDa
     buffer = oldest_date
     while True:
         if (targetDate.month - timeArea_months) < 1:
-            timeStart = datetime(buffer.year - 1, 12 + (targetDate.month - timeArea_months), targetDate.day)
-        else:
-            timeStart = datetime(buffer.year, targetDate.month - timeArea_months, targetDate.day)
+            days_in_targetMonth = calendar.monthrange(buffer.year, 12 + (targetDate.month - timeArea_months))[1]
 
-        if (targetDate.month + timeArea_months) > 12:
-            timeEnd = datetime(buffer.year + 1, (targetDate.month + timeArea_months) - 12, targetDate.day)
+            if targetDate.day > days_in_targetMonth:
+                if 13 + (targetDate.month - timeArea_months) > 12:
+                    timeStart = datetime(buffer.year , 1, targetDate.day - days_in_targetMonth)
+                else:
+                    timeStart = datetime(buffer.year - 1, 12 + (targetDate.month - timeArea_months), targetDate.day - days_in_targetMonth)
+            else:
+                timeStart = datetime(buffer.year - 1, 12 + (targetDate.month - timeArea_months), targetDate.day)
         else:
-            timeEnd = datetime(buffer.year, targetDate.month + timeArea_months, targetDate.day)
+            days_in_targetMonth = calendar.monthrange(buffer.year, targetDate.month - timeArea_months)[1]
+
+            if targetDate.day > days_in_targetMonth:
+                timeStart = datetime(buffer.year, targetDate.month - timeArea_months + 1, targetDate.day - days_in_targetMonth)
+            else:
+                timeStart = datetime(buffer.year, targetDate.month - timeArea_months, targetDate.day)
+
+        
+        if (targetDate.month + timeArea_months) > 12:
+            days_in_targetMonth = calendar.monthrange(buffer.year, (targetDate.month + timeArea_months) - 12)[1]
+
+            if targetDate.day > days_in_targetMonth:
+                timeEnd = datetime(buffer.year + 1, (targetDate.month + timeArea_months) - 11, targetDate.day - days_in_targetMonth)
+            else:
+                timeEnd = datetime(buffer.year + 1, (targetDate.month + timeArea_months) - 12, targetDate.day)
+        else:
+            days_in_targetMonth = calendar.monthrange(buffer.year, targetDate.month + timeArea_months)[1]
+
+            if targetDate.day > days_in_targetMonth:
+                if targetDate.month + timeArea_months + 1 > 12:
+                    timeEnd = datetime(buffer.year + 1, 1, targetDate.day - days_in_targetMonth)
+                else:
+                    timeEnd = datetime(buffer.year, targetDate.month + timeArea_months + 1, targetDate.day - days_in_targetMonth)
+            else:
+                timeEnd = datetime(buffer.year, targetDate.month + timeArea_months, targetDate.day)
 
         dateTimeRange.append((timeStart, timeEnd))
 

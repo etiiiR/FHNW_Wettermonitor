@@ -14,7 +14,7 @@ wd.init()
 
 #print(wd.extract_anomaly("mythenquai", "100w")) 
 
-#wd.generate_spline([wd.Measurement.Air_temp], "mythenquai", "10w", "Temperatur T in °C", showPlot = True, imagePath = "image1.png")
+#wd.generate_spline([wd.Measurement.Air_temp], "mythenquai", "20w", "Temperatur T in °C", showPlot = True, imagePath = "image1.png")
 
 #wd.generate_plot_colMatrix([(wd.Measurement.Air_temp, ("Temperatur", "T", "°C")), (wd.Measurement.Humidity, ("Luftfeuchtigkeit", "φ", "%"))], "mythenquai", "1w", showPlot = True, imagePath = "image2.png")
 
@@ -89,12 +89,12 @@ def generateRandomDate(startDate, endDate) -> datetime:
     random_number_of_days = random.randrange(days_between_dates)
     return startDate + timedelta(days=random_number_of_days)
 
-numberOfDates = 10
+numberOfDates = 100
 startDate = datetime(2008, 1, 1)
 endDate = datetime(2020, 12, 1)
 
 dates = []
-random.seed(1234)
+random.seed(53165441847244654)
 for i in range(0, numberOfDates):
     date = generateRandomDate(startDate, endDate)
     dates.append(datetime(date.year, date.month, date.day))
@@ -130,4 +130,16 @@ for prediction in predictions:
     nextDateAlgorithm.append(difference_nextDate)
 
 print("Accuracy nearest neighbour: +-", np.mean(nearestNeighbourAlgorithm), " °C")
-print("Accuracy next date: +-", np.mean(nextDateAlgorithm), " °C")
+print("Accuracy next date: +-", np.mean(nextDateAlgorithm), " °C") 
+
+
+
+
+
+""" #test construct_window_vector
+dataFrame = wd.get_measurements([wd.Measurement.Air_temp, wd.Measurement.Humidity], "mythenquai", (datetime(2020, 5, 1, 13, 0), datetime(2020, 5, 1, 13, 50)), keepIndex=True)
+dataFrame.iloc[-1, -1] = None
+
+print(dataFrame)
+
+print(wd.construct_window_vector(dataFrame, [(-10, 10, 1), (-40, 40, 0.2)])) """
