@@ -7,6 +7,8 @@ import pandas as pd
 import enum
 from pathlib import Path
 from windrose import WindroseAxes
+from matplotlib import dates as mpl_dates
+import numpy as np
 
 class Measurement(enum.Enum):
   Air_temp = "air_temperature"
@@ -179,7 +181,7 @@ def generate_spline(measurements : list(Measurement), station : str, time_range,
   else:
     plt.savefig(imagePath, bbox_inches='tight')
 
-def generate_plot_colMatrix(measurements : list(tuple((Measurement, tuple((str, str, str))))), station : str, time_range, showPlot = False, imagePath = None):
+def generate_plot_colMatrix(measurements : list(tuple((Measurement, tuple((str, str, str))))), station : str, time_range, showPlot = False, imagePath = None, showMin = True, showMean = True, showMax = True, title = str, showLatest = True):
   """
   create splines aligned vertically
 
@@ -195,7 +197,6 @@ def generate_plot_colMatrix(measurements : list(tuple((Measurement, tuple((str, 
     raise Exception("Es müssen mindestens 2 measurements angegeben werden!")
 
   df = get_measurements([measurement[0] for measurement in measurements], station, time_range)
-
   fig, axs = plt.subplots(len(measurements), 1)
 
   for i, measurement in enumerate(measurements):
@@ -204,19 +205,88 @@ def generate_plot_colMatrix(measurements : list(tuple((Measurement, tuple((str, 
     unit_symbol = measurement[1][1]
     unit = measurement[1][2]
 
-    axs[i].plot(df["time"].values, df[measurement_type.value].values)
-    axs[i].set(xlabel = f"Zeit t in {_get_fmt(axs[i].xaxis)}", ylabel = f"{unit_name} {unit_symbol} in {unit}")
-    axs[i].legend([unit_name])
+    # Plot values
+    axs[i].plot(df["time"].values, df[measurement_type.value].values, label = f"{unit_name}")
 
+    # Plot mean as a line
+    if showMean:
+      mean_measurements = df[measurement_type.value][np.logical_not(np.isnan(df[measurement_type.value]))].values.mean()        #calculate mean without na
+      axs[i].axhline(mean_measurements, color = "r", label = f"Mean: {round(mean_measurements, 1)}{unit}", linewidth = 1)                  #plot mean line
+
+    # get offsets for positioning annotation text for min/max
+    if unit_name == "Temperatur":
+      offset_annotation = 5
+    elif unit_name == "Luftfeuchtigkeit":
+      offset_annotation = 10
+
+    # Mark max in red
+    if showMax:
+     
+      ymax = 0    
+      xpos = 0    #index xmax
+      xmax = 0
+
+      for e in range(0, len(df[measurement_type.value].values)):    #Loop through column with index
+        if df[measurement_type.value].values[e] > ymax:             #Find max
+          ymax = df[measurement_type.value].values[e]               
+          xpos = e                                                  #Get Index of ymax
+
+      xmax = df["time"][xpos]                                #Get xmax with index of ymax
+
+      axs[i].scatter(xmax, ymax, color = "red", s = 15)                        #Plot max point
+      axs[i].annotate(f"Max: {ymax}{unit}", xy=(xmax, ymax), xytext=(xmax, ymax + offset_annotation))     #Plot label
+
+    # Mark min in red
+    if showMin:
+
+      ymin = 1000    
+      xpos = 0    #index xmin
+      xmin = 0
+
+      for e in range(0, len(df[measurement_type.value].values)):    #Loop through column with index
+        if df[measurement_type.value].values[e] < ymin:             #Find min
+          ymin = df[measurement_type.value].values[e]               
+          xpos = e                                                  #Get Index of ymin
+
+      xmin = df["time"][xpos]                                 #Get xmin with index of ymin
+
+      axs[i].scatter(xmin, ymin, color = "red", s = 15)                        #Plot min point
+      axs[i].annotate(f"Min: {ymin}{unit}", xy=(xmin, ymin), xytext=(xmin, ymin - offset_annotation))      #Plot label
+
+    # Mark latest value
+    if showLatest:
+      axs[i].scatter(df["time"].values[-1], df[measurement_type.value].values[-1], color = "green", s = 15, label = f"Aktuell: {df[measurement_type.value].values[-1]}{unit}") 
+
+
+    #Titles and labels
+    axs[i].set(xlabel = f"Zeit t in {_get_fmt(axs[i].xaxis)}", ylabel = f"{unit_name} {unit_symbol} in {unit}")
+    axs[i].legend(loc = "center left",  bbox_to_anchor=(1, 0.5))
+    axs[i].title.set_text(f"{title}, {unit_name} in {unit}")
+    if unit_name == "Temperatur":
+      axs[i].set_ylim(-20, 50)
+    elif unit_name == "Luftfeuchtigkeit":
+      axs[i].set_ylim(0, 125)
+    left, right = axs[i].get_xlim()
+    axs[i].set_xlim(left, right + 0.05)
+
+  # Format layout
   fig.autofmt_xdate()
   fig.tight_layout()
+  fig.set_figwidth(10)
+
+  # set date formatter
+  if title == "Tagesplot":
+    date_formatter = mpl_dates.DateFormatter("%d %b %H:%M")
+    for ax in axs:
+      ax.xaxis.set_major_formatter(date_formatter)
+
 
   if showPlot:
     plt.show()
   else:
     plt.savefig(imagePath, bbox_inches='tight')
 
-def generate_plot_rowMatrix(measurements : list(tuple((Measurement, tuple((str, str, str))))), station : str, time_range, showPlot = False, imagePath = None):
+def generate_plot_rowMatrix(measurements : list(tuple((Measurement, tuple((str, str, str))))), station : str, time_range, showPlot = False, imagePath = None, showMean = False, showMax = False, showMin = False, title = str ):
   """
   create splines aligned horizontally
 
