@@ -1,0 +1,23 @@
+
+<ul class="h-menu large">
+    <li><a href="/wetterstation/{{station}}">🔙 Zurück</a></li>
+    <li><a href="/wetterstation/{{station}}/wind/{{type}}"        class={{ "text-bold" if category == "wind"        }}>Wind</a></li>
+    <li><a href="/wetterstation/{{station}}/temperature/{{type}}" class={{ "text-bold" if category == "temperature" }}>Temperaturen</a></li>
+    <li><a href="/wetterstation/{{station}}/water/{{type}}"       class={{ "text-bold" if category == "water"       }}>Wasser</a></li>
+</ul>
+
+<ul class="h-menu">
+    <li><a href="/wetterstation/{{station}}/{{category}}/history"  class={{ "text-bold" if type == "history"  }}>Letzte 7 Tage</a></li>
+    <li><a href="/wetterstation/{{station}}/{{category}}/today"    class={{ "text-bold" if type == "today"    }}>Heute</a></li>
+    <li><a href="/wetterstation/{{station}}/{{category}}/tomorrow" class={{ "text-bold" if type == "tomorrow" }}>Voraussage</a></li>
+</ul>
+
+<div id='body' class="container-fluid">
+    <div class="grid">
+        <div class="row flex-align-center" style='height: 70vh;' onclick="location.href='/wetterstation/{{station}}';">
+            <div class="cell flex-justify-center">
+                <img src={{ url_for('static', filename="Images/graphs/{}_{}_{}.png".format(station, category, type)) }} style="height: 100%; width: 100%; object-fit: contain" border="0">
+            </div>
+        </div>
+    </div>
+</div>
