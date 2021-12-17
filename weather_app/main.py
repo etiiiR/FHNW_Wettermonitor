@@ -17,7 +17,7 @@ import threading
 
 app = Flask(__name__)
 influx_db = InfluxDB(app=app)
-ui = FlaskUI(app, fullscreen=True, width=600, height=500, start_server='flask')
+ui = FlaskUI(app, fullscreen=True, width=600, height=500, start_server='flask', idle_interval=20)
 
 
 def get_weather_store_in_data(data):
@@ -123,6 +123,7 @@ if __name__ == "__main__":
        maxBytes=(1048576),
        backupCount=8
     )
+    handler.setLevel(logging.WARNING)
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     handler.setFormatter(formatter)
     logging.getLogger().addHandler(handler)

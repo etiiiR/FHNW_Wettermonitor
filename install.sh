@@ -6,6 +6,12 @@ sudo apt-get purge smartsim minecraft-pi libreoffice* -y
 sudo apt-get clean
 sudo apt-get autoremove -y
 
+echo "optimizing boot"
+echo "disable_splash=1" | sudo tee -a /boot/config.txt >
+echo "dtoverlay=disable-bt" | sudo tee -a /boot/config.txt >
+echo "boot_delay=0" | sudo tee -a /boot/config.txt >
+
+
 sudo apt-get update
 sudo apt-get upgrade
 sudo apt-get install
@@ -57,6 +63,9 @@ echo "installing python dependencies"
 sudo /bin/python -m pip install influxdb
 sudo /bin/python -m pip install pandas
 
+sudo apt-get install libjpeg-dev zlib1g-dev
+
+
 sudo /bin/python -m pip install -r weather_app/requirements.txt
 
 
@@ -69,5 +78,5 @@ echo "copy service"
 sudo cp kiosk.service /lib/systemd/system/kiosk.service
 echo "enable service"
 sudo systemctl enable kiosk.service
-echo "start service"
-sudo systemctl start kiosk.service
+echo "rebooting now"
+reboot

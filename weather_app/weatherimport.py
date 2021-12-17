@@ -43,8 +43,11 @@ def init():
   """
   global systemInitialized
 
-  locale.setlocale(locale.LC_ALL, 'de_DE') # formats dates on plots correct
-  
+  try:
+    locale.setlocale(locale.LC_ALL, 'de_DE') # formats dates on plots correct
+  except:
+    pass # ignore
+
   wd.connect_db(config)
 
   root = str(Path(os.path.dirname(os.path.realpath(__file__))).parent)
