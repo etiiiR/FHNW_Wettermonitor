@@ -43,7 +43,8 @@ def get_weather_store_in_data(data):
 def update_data():
     # use the scheduler to plot inside the main thread
     # generate_today_graphs() will cancel the job, so the job is only run once
-    schedule.every().second.do(weatherimport.generate_today_graphs) # update graphs with new data
+    if weatherimport.systemInitialized:
+        schedule.every().second.do(weatherimport.generate_today_graphs) # update graphs with new data
     logging.info('Update Data from database')
 
 
@@ -87,7 +88,6 @@ def wetterstation(station: str):
                     weatherimport.Measurement.Water_level,
                     weatherimport.Measurement.Pressure,
                     weatherimport.Measurement.Radiation]
-    # TODO: check if the database has old data if yes then update it and afterwards load the homepage
     weather = weatherimport.get_measurements(measurements, station, "1d")
     weather = weather.sort_values(by=['time'], ascending=False).to_dict("records")[0]
     for key in weather:
@@ -99,7 +99,6 @@ def wetterstation(station: str):
         subpage = "main",
         station = station,
         weather = weather,
-        # TODO wait 5 seconds if not initalized
         refresh_seconds = 600 - int((time.time()+300) % 600) + 20 # add 20 seconds to compensate for inaccuracy
     )
 

@@ -28,6 +28,7 @@ from collections import deque
 from requests.models import HTTPError
 import calendar
 import main as update
+import pytz
 
 
 class Config:
@@ -38,7 +39,7 @@ class Config:
     stations_force_query_last_entry = False
     stations_last_entries = {} #last entries in database
     keys_mapping = { 
-        'values.timestamp_cet.value': 'timestamp_cet',
+        'timestamp': 'timestamp',
         'values.air_temperature.value': 'air_temperature',
         'values.barometric_pressure_qfe.value': 'barometric_pressure_qfe',
         'values.dew_point.value': 'dew_point',
@@ -98,7 +99,7 @@ def __extract_last_db_day(last_entry, station, default_last_db_day):
 
         if val is not None: #if last entry found
             if not val.index.empty: #index of value is not empty
-                return val.index[0].replace(tzinfo = None) #return date and remove tzinfo
+                return val.index[0]#.replace(tzinfo = None) #return date and remove tzinfo
 
     return default_last_db_day
 
@@ -129,7 +130,7 @@ def __get_data_of_day(day, station, periodic_retry = False):
             logging.warning(f'Request for \'{e.request.url}\' failed. ({e})\nTrying again in 10 seconds...')
             time.sleep(10)
 
-def __define_types(data : pandas.DataFrame, date_format):
+def __define_types(data : pandas.DataFrame, date_format, cet_cest=False):
     '''Description:
     
     renames timestamp column,
@@ -139,9 +140,12 @@ def __define_types(data : pandas.DataFrame, date_format):
     set datatype of all columns (except timestamp) to float64
     '''
     if not data.empty: #data is not empty
-        # convert cet to utc
-        data['timestamp'] = pd.to_datetime(data['timestamp_cet'], format = date_format) - timedelta(hours = 1) #convert from "timestamp_cet" to new date_format and create new column "timestamp" subtract one hour (why? i think it should be 2 hours)
-        data.drop('timestamp_cet', axis = 1, inplace = True) #drop old timestamp column
+        if 'timestamp_cet' in data:
+            data = data.rename(columns={"timestamp_cet": "timestamp"})
+        data['timestamp'] = pd.to_datetime(data['timestamp'], format = date_format, utc=not cet_cest)
+        if cet_cest:
+            zurich = pytz.timezone('Europe/Zurich')
+            data['timestamp'] = data['timestamp'].apply(lambda date: zurich.localize(date, is_dst=None).astimezone(pytz.utc))
         data.set_index('timestamp', inplace = True) #set "timestamp" as the index column and delete the old index column (inpace -> instead of creating a new dataframe, override the old one)
 
     data.replace('.', 0, inplace = True) #repalce al the missing values (represented as .) with a 0
@@ -161,7 +165,7 @@ def __clean_data(config, data_of_last_day, last_db_entry, station):
         if mapping != column:
             normalized.drop(columns = column, inplace = True)
 
-    normalized = __define_types(normalized, '%d.%m.%Y %H:%M:%S')
+    normalized = __define_types(normalized, '%Y-%m-%dT%H:%M:%S.%fZ')
 
     # remove all entries older than last element
     if last_db_entry is not None: #if database isn't empty
@@ -170,7 +174,7 @@ def __clean_data(config, data_of_last_day, last_db_entry, station):
             last_db_entry_time = last_db_entry
         elif isinstance(last_db_entry, dict):
             last_db_entry_time = last_db_entry.get(station, None)
-        last_db_entry_time = last_db_entry_time.index[0].replace(tzinfo = None)
+        last_db_entry_time = last_db_entry_time.index[0]
         normalized.drop(normalized[normalized.index <= last_db_entry_time].index, inplace = True)
 
     return normalized
@@ -236,7 +240,9 @@ def try_import_csv_file(config, station, file_name):
     if os.path.isfile(file_name): #does the path point to a file?
         logging.info('\tLoad ' + file_name)
         for chunk in pd.read_csv(file_name, delimiter = ',', chunksize = config.historic_data_chunksize): #read the csv file in chunks
-            chunk = __define_types(chunk, '%Y-%m-%dT%H:%M:%S') #preprocess data
+            chunk = __define_types(chunk, '%Y-%m-%dT%H:%M:%S', True) #preprocess data
+            
+            # TODO here the time is not utc but CET and in the summer CEST
             logging.info('Add ' + station + ' from ' + str(chunk.index[0]) + ' to ' + str(chunk.index[-1]))
             __add_data_to_db(config, chunk, station) #add data to database
 
@@ -249,7 +255,7 @@ def try_import_csv_file(config, station, file_name):
 def __is_csv_imported(config, station):
     last_db_entry = __get_last_db_entry(config, station)
     last_db_day = __extract_last_db_day(last_db_entry, station, None)
-    return last_db_day != None and last_db_day > datetime(2007, 7, 31)
+    return last_db_day != None and last_db_day > datetime(2007, 7, 31, tzinfo=pytz.utc)
 
 
 def import_latest_data(config, periodic_read = False, callback = update.update_data):
@@ -262,14 +268,14 @@ def import_latest_data(config, periodic_read = False, callback = update.update_d
 
    """
     # access API for current data
-    current_time = datetime.utcnow() + timedelta(hours = 1)
+    current_time = datetime.now(pytz.utc)
     current_day = current_time.replace(hour = 0, minute = 0, second = 0, microsecond = 0)
     last_db_days = [current_day] * len(config.stations)
 
     #get last date (day) of last db entry
     for idx, station in enumerate(config.stations):
         last_db_entry = __get_last_db_entry(config, station)
-        last_db_days[idx] = __extract_last_db_day(last_db_entry, station, last_db_days[idx]) + timedelta(hours = 1)
+        last_db_days[idx] = __extract_last_db_day(last_db_entry, station, last_db_days[idx])
 
     #set signal handler if periodic read available
     if periodic_read and threading.current_thread() is threading.main_thread():
@@ -288,7 +294,7 @@ def import_latest_data(config, periodic_read = False, callback = update.update_d
         if not first_cycle and periodic_read and check_db_day >= current_day and not first_cycle: #if its not the first cycle, and no new day arrived
             # everytime the clock hits 05', 15', 25', 35', 45' or 55' (The new measurement is always 5 Minutes delayed)
             sleep_seconds = 600 - int((time.time()+300) % 600) + 10 # add ten seconds to compensate for inaccuracy 
-            current_time = datetime.utcnow() + timedelta(hours = 1)
+            current_time = datetime.now(pytz.utc)
             sleep_until = current_time + timedelta(seconds = sleep_seconds, microseconds=0)
 
             logging.info('Sleep for ' + str(sleep_seconds) + 's (from ' + str(current_time) + ' until ' + str(sleep_until) + ') when next data will be queried.')
@@ -330,7 +336,7 @@ def import_latest_data(config, periodic_read = False, callback = update.update_d
         if check_db_day < current_day: #new day arrived
             check_db_day = check_db_day + pd.DateOffset(1) #add day 
         elif periodic_read and check_db_day >= current_day: #if periodic read enabled and it is the same day
-            check_db_day = datetime.utcnow() + timedelta(hours = 1) #update day (get current date)
+            check_db_day = datetime.now(pytz.utc) #update day (get current date)
 
         if first_cycle:
             first_cycle = False

@@ -12,6 +12,9 @@ import enum
 import locale
 from pathlib import Path
 from windrose import WindroseAxes
+import shutil
+import pytz
+import matplotlib
 from matplotlib import dates as mpl_dates
 
 
@@ -44,6 +47,7 @@ def init():
     locale.setlocale(locale.LC_ALL, 'de_DE') # formats dates on plots correct
   except:
     pass # ignore
+  matplotlib.rcParams['timezone'] = 'Europe/Zurich'
 
   wd.connect_db(config)
 
@@ -101,6 +105,9 @@ def get_all_measurements(station : str, time_range, timeFilling = True):
   if timeFilling:
     df = df.resample("10min").asfreq()#resample (zeitlücken mit NaN füllen)
 
+  zurich = pytz.timezone('Europe/Zurich')
+  df.index = df.index.map(lambda date: date.astimezone(zurich))
+
   df["time"] = df.index
   df = df.reset_index(drop = True)
 
@@ -129,6 +136,9 @@ def get_measurement(measurment : Measurement, station : str, time_range, timeFil
   if timeFilling:
     df = df.resample("10min").asfreq()#resample (zeitlücken mit NaN füllen)
 
+  zurich = pytz.timezone('Europe/Zurich')
+  df.index = df.index.map(lambda date: date.astimezone(zurich))
+
   df["time"] = df.index
   df = df.reset_index(drop = True)
 
@@ -156,6 +166,9 @@ def get_measurements(measurements : list(Measurement), station : str, time_range
   
   if timeFilling:
     df = df.resample("10min").asfreq()#resample (zeitlücken mit NaN füllen)
+
+  zurich = pytz.timezone('Europe/Zurich')
+  df.index = df.index.map(lambda date: date.astimezone(zurich))
 
   if not keepIndex:
     df["time"] = df.index
