@@ -384,7 +384,7 @@ def get_attr_entries(config, attribute, station, start_time : str, stop_time : s
 
     #add empty column if not existent
     if attribute not in val:
-            val[attribute] = None
+        val[attribute] = None
         
     return val
 

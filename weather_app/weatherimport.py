@@ -101,6 +101,8 @@ def get_all_measurements(station : str, time_range, timeFilling = True):
   else:
     raise Exception("time_range has to be a string or a tuple")
 
+  if df is None:
+    raise Exception("Measurements not available for this day!")
 
   if timeFilling:
     df = df.resample("10min").asfreq()#resample (zeitlücken mit NaN füllen)
@@ -632,9 +634,37 @@ def construct_window_vector(df: pd.DataFrame, lim_weight: list, normalize_to_plu
 
   return vector
 
-def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_months: int, day_window_size = '4h', measurements = [Measurement.Air_temp, Measurement.Dew_point], vector_lim_weight = [(-10, 10, 1), (-10, 10, 0.1)]):
+def get_mean_of_day(df, measurements_converted, vector_lim_weight):
   """
-  Get date of a day which is the closest to date_searchBestRecord by cos simularity 
+  calculates mean of day in a normalized way
+
+  parameters:
+  df (pandas Dataframe): dataframe of day
+  measurements_converted (list(Measurement)): list of all measurements (converted to value of measurements)
+  vector_lim_weight (list(tuple)): specify min, max and weight for each measurement
+  """
+  #calculate mean of measurements
+  mean_of_measurements_dateSearchFor_normalized_list = []
+  for i, measurement in enumerate(measurements_converted):
+    range0 = vector_lim_weight[0][1] - vector_lim_weight[0][0]
+    rangei = vector_lim_weight[i][1] - vector_lim_weight[i][0]
+
+    weight = (range0 / rangei) * vector_lim_weight[i][2] #calculate weight in dependence to first measurement and measurement weight
+
+    mean_of_measurements_dateSearchFor_normalized_list.append(np.nanmean(df[measurement]) * weight)
+
+    pythoagoras = 0
+    for mean_measurement in mean_of_measurements_dateSearchFor_normalized_list:
+      pythoagoras += mean_measurement ** 2
+
+    pythoagoras = np.sqrt(pythoagoras)
+
+  return pythoagoras
+
+
+def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_months: int, day_window_size = '4h', measurements = [Measurement.Air_temp, Measurement.Dew_point], vector_lim_weight = [(-10, 10, 1), (-10, 10, 0.1)], mean_in_range_percent = 0):
+  """
+  Get date of a day which is the closest to date_searchBestRecord by cos simularity and mean difference
   
   Parameters:
   station (string): station
@@ -642,6 +672,7 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
   timeArea_months (int): window time bewteen (date_searchBestRecord - timeArea_months, date_searchBestRecord + timeArea_months) every year 
   measurements (list(Measurement)): measurements to include. Example: [Measurement.Air_temp, Measurement.Dew_point]
   vector_lim_weight (list(tuple)): specify min, max and weight for each measurement. Example for measurement Air_temp: (-10, 10, 1) min -> -10, max -> 10, weight = 1: if value = -10 -> X_airTemp = -1 * weight; value = 10 -> X_airTemp = 1 * weight; 
+  mean_in_range_percent (int (0 to 100)): this parameter specifies, how many percents of the mean difference range is allowed. Example: mean_in_range_percent -> min meanDifference is 2 and max meanDifference is 10 and mean_in_range_percent is 10% -> difference of historical day to  date_searchBestRecord has to be equal or less as (2 + ((10 - 2) / 100 * 10)) = 2.8
   """
 
   if len(measurements) != len(vector_lim_weight):
@@ -665,6 +696,9 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
   table_dateSearchFor["time"] = [pd.to_datetime(index, format="%H:%M:%S", errors='ignore') for index in table_dateSearchFor.index] #override time and store time only
   time_dateSearchFor_windowed = table_dateSearchFor.groupby([pd.Grouper(key = 'time', freq=day_window_size, origin = "start_day")]) #group by an interval of 4h (origin = "start_Day" -> first group starts at midnight and not with first value)
 
+  #calculate mean of all measurements
+  mean_of_dateSearchFor_norm = get_mean_of_day(table_dateSearchFor, measurements_converted, vector_lim_weight)
+
   #calculate max length of groups of a day with all values
   date_range = pd.date_range("2018-01-01", periods=144, freq="10min")
   date_range_df_windowed = pd.DataFrame(date_range, columns = ["time"]).groupby([pd.Grouper(key = 'time', freq=day_window_size, origin = "start_day")], as_index = False) 
@@ -682,21 +716,73 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
   if not vector_today_windowed_dict:
     raise Exception("The day we are searching for cannot be vectorized... stopped searching!")
 
-  progress_counter = 0
-  progress_steps = [steps for steps in range(0, len(tables_groupedByDay_hist.size()), len(tables_groupedByDay_hist.size()) // 10)]
-
-  #search for best cos
-  best_date = dateOnly
-  bestCos = np.pi / 2
-  for index, table_hist_day in tables_groupedByDay_hist: #iterate over days
+  #calculate min mean difference of measurements between historical date and searchdate
+  best_meanDifference = None
+  worst_meanDifference = None
+  diff_means = []
+  for index, table_hist_day in tables_groupedByDay_hist:
     time =  index
 
     if datetime(time.year, time.month, time.day) == dateOnly: #reference day found
       #logging.info("reference day found:", datetime(time.year, time.month, time.day))
       continue
 
+
+    diffMean_of_hist_day_norm = abs(get_mean_of_day(table_hist_day, measurements_converted, vector_lim_weight) - mean_of_dateSearchFor_norm)
+    diff_means.append(diffMean_of_hist_day_norm) #add value
+
+
+    if not best_meanDifference: #if no value stored
+      best_meanDifference = diffMean_of_hist_day_norm
+
+    elif diffMean_of_hist_day_norm < best_meanDifference:
+      best_meanDifference = diffMean_of_hist_day_norm
+
+    if not worst_meanDifference: #if no value stored
+      worst_meanDifference = diffMean_of_hist_day_norm
+
+    elif diffMean_of_hist_day_norm > best_meanDifference:
+      worst_meanDifference = diffMean_of_hist_day_norm
+  
+  meanDifference_range = worst_meanDifference - best_meanDifference #calculate range
+  min_meanDifference = ((meanDifference_range / 100) * mean_in_range_percent) + best_meanDifference #mean of historical date has to be in range of meanDifference_range / 10 
+  
+
+  #progress counter
+  num_of_values_in_range = 0
+  for diffMean in diff_means:
+    if diffMean <= min_meanDifference:
+      num_of_values_in_range += 1
+
+  progress_steps = [round(steps, 0) for steps in np.arange(0, num_of_values_in_range, num_of_values_in_range / 10)]
+
+  #search for best cos
+  best_date = dateOnly
+  bestCos = np.pi / 2
+  progress_counter = 0
+  for index, table_hist_day in tables_groupedByDay_hist: #iterate over days
+    time =  index
+
     table_day = table_hist_day #rename
+
+    if datetime(time.year, time.month, time.day) == dateOnly: #reference day found
+      #logging.info("reference day found:", datetime(time.year, time.month, time.day))
+      continue
     
+
+
+    ####if mean difference is in range####
+    mean_of_hist_day_norm = get_mean_of_day(table_day, measurements_converted, vector_lim_weight) #get mean of hist_Day measurements
+
+    #continue if mean difference is not in allowed range
+    if abs(mean_of_hist_day_norm - mean_of_dateSearchFor_norm) > min_meanDifference:
+      continue
+
+    progress_counter += 1
+
+
+
+    ####find best cos####
     table_day["time"] = [pd.to_datetime(index, format="%H:%M:%S", errors='ignore') for index in table_day.index] #override date+time and store time only
 
     time_windowed = table_day.groupby([pd.Grouper(key = 'time', freq=day_window_size, origin = "start_day")], as_index = False) #group by an interval of day_window_size (origin = "start_Day" -> first group starts at midnight and not with first value)
@@ -760,11 +846,9 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
         bestCos = mean_cosinus
         best_date = time
 
-    progress_counter += 1
-
     if progress_counter in progress_steps:
       logging.info(str(progress_steps.index(progress_counter) * 10) + "% reached")
-  
+
   logging.info("Most similar day found: "+ str(best_date) +" nearest neighbour calculation finished :)")
 
   return best_date
@@ -782,10 +866,16 @@ def forecast_of_tomorrow(station: str, date_searchBestRecord: datetime):
   """
 
   possibleMeasurements = [Measurement.Air_temp, Measurement.Humidity]
-  config_possibleMeasurements = [(-10, 10, 1), (-40, 40, 0.2)]
+  config_possibleMeasurements = [(-10, 10, 1), (-40, 40, 0)]
   
   dateOnly = datetime(date_searchBestRecord.year, date_searchBestRecord.month, date_searchBestRecord.day) #get date of date_searchBestRecord only
-  test_measurement = get_all_measurements(station, (dateOnly, datetime(dateOnly.year, dateOnly.month, dateOnly.day, hour = 23, minute = 59, second = 59)), timeFilling=False)
+
+  try:
+    test_measurement = get_all_measurements(station, (dateOnly, datetime(dateOnly.year, dateOnly.month, dateOnly.day, hour = 23, minute = 59, second = 59)), timeFilling=False)
+  
+  except Exception as ex:
+    raise Exception("Forecast of this day couldn't be created: ", ex)
+
 
   #get indexes of available measurements with its config
   indexAvailable = []
@@ -805,7 +895,7 @@ def forecast_of_tomorrow(station: str, date_searchBestRecord: datetime):
     availableMeasurements.append(possibleMeasurements[i])
     config_availableMeasurements.append(config_possibleMeasurements[i])
 
-  date_of_nearestNeighbour = nearest_neighbour(station, date_searchBestRecord, 2, "2h", availableMeasurements, config_availableMeasurements) #get nearest date
+  date_of_nearestNeighbour = nearest_neighbour(station, date_searchBestRecord, 2, "2h", availableMeasurements, config_availableMeasurements, mean_in_range_percent = 10) #get nearest date
 
   predicted_date = date_of_nearestNeighbour + timedelta(days = 1) #add 1 day
 

@@ -101,16 +101,24 @@ for i in range(0, numberOfDates):
 
 predictions = []
 for date in dates:
-    prediction = wd.forecast_of_tomorrow("mythenquai", date)[0]
-    predictions.append((date, prediction))
+    try:
+        prediction = wd.forecast_of_tomorrow("mythenquai", date)[0]
+        predictions.append((date, prediction))
+    
+    except:
+        print("Target day: ", date, " couldn't be forecasted... skip")
+    
 
 #comparison
-nextDateAlgorithm = []
-nearestNeighbourAlgorithm = []
+nextDateAlgorithm_mean = []
+nearestNeighbourAlgorithm_mean = []
+nextDateAlgorithm_std = []
+nearestNeighbourAlgorithm_std = []
 for prediction in predictions:
     targetDate = prediction[0]
     targetTimeRange =  (datetime(targetDate.year, targetDate.month, targetDate.day, 0, 0, 1), datetime(targetDate.year, targetDate.month, targetDate.day, 23, 59, 59)) 
     nearestNDate = prediction[1]
+    print("nearest n date: ", nearestNDate)
     nearestNDateTimeRange =  (datetime(nearestNDate.year, nearestNDate.month, nearestNDate.day, 0, 0, 1), datetime(nearestNDate.year, nearestNDate.month, nearestNDate.day, 23, 59, 59)) 
     nextDate = targetDate + timedelta(days=1)
     nextDateTimeRange =  (datetime(nextDate.year, nextDate.month, nextDate.day, 0, 0, 1), datetime(nextDate.year, nextDate.month, nextDate.day, 23, 59, 59)) 
@@ -118,19 +126,30 @@ for prediction in predictions:
     data_target = wd.get_measurement(wd.Measurement.Air_temp, "mythenquai", targetTimeRange)
     data_nearestN = wd.get_measurement(wd.Measurement.Air_temp, "mythenquai", nearestNDateTimeRange)
     data_nextDate = wd.get_measurement(wd.Measurement.Air_temp, "mythenquai", nextDateTimeRange)
-
+    
     mean_temp_target = np.nanmean(data_target["air_temperature"].tolist())
     mean_temp_nearestN = np.nanmean(data_nearestN["air_temperature"].tolist())
     mean_temp_data_nextDate = np.nanmean(data_nextDate["air_temperature"].tolist())
 
-    difference_nearestN = np.abs(mean_temp_target - mean_temp_nearestN)
-    difference_nextDate = np.abs(mean_temp_target - mean_temp_data_nextDate)
+    std_temp_target = np.nanstd(data_target["air_temperature"].tolist())
+    std_temp_nearestN = np.nanstd(data_nearestN["air_temperature"].tolist())
+    std_temp_data_nextDate  = np.nanstd(data_nextDate["air_temperature"].tolist())
 
-    nearestNeighbourAlgorithm.append(difference_nearestN)
-    nextDateAlgorithm.append(difference_nextDate)
+    difference_mean_nearestN = np.abs(mean_temp_target - mean_temp_nearestN)
+    difference_mean_nextDate = np.abs(mean_temp_target - mean_temp_data_nextDate)
 
-print("Accuracy nearest neighbour: +-", np.mean(nearestNeighbourAlgorithm), " °C")
-print("Accuracy next date: +-", np.mean(nextDateAlgorithm), " °C") 
+    difference_std_nearestN = np.abs(std_temp_target - std_temp_nearestN)
+    difference_std_nextDate = np.abs(std_temp_target - std_temp_data_nextDate)
+
+    nearestNeighbourAlgorithm_mean.append(difference_mean_nearestN)
+    nextDateAlgorithm_mean.append(difference_mean_nextDate)
+    nearestNeighbourAlgorithm_std.append(difference_std_nearestN)
+    nextDateAlgorithm_std.append(difference_std_nextDate)
+
+print("Accuracy nearest neighbour (mean difference): +-", np.mean(nearestNeighbourAlgorithm_mean), " °C")
+print("Accuracy next date (mean difference): +-", np.mean(nextDateAlgorithm_mean), " °C") 
+print("Accuracy nearest neighbour (standard deviation difference): +-", np.mean(nearestNeighbourAlgorithm_std), " °C")
+print("Accuracy next date (standard deviation difference): +-", np.mean(nextDateAlgorithm_std), " °C") 
 
 
 
