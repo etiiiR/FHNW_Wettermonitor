@@ -130,7 +130,7 @@ def __get_data_of_day(day, station, periodic_retry = False):
             logging.warning(f'Request for \'{e.request.url}\' failed. ({e})\nTrying again in 10 seconds...')
             time.sleep(10)
 
-def __define_types(data : pandas.DataFrame, date_format, cet_cest=False):
+def __define_types(data : pandas.DataFrame, date_format):
     '''Description:
     
     renames timestamp column,
@@ -141,11 +141,10 @@ def __define_types(data : pandas.DataFrame, date_format, cet_cest=False):
     '''
     if not data.empty: #data is not empty
         if 'timestamp_cet' in data:
-            data = data.rename(columns={"timestamp_cet": "timestamp"})
-        data['timestamp'] = pd.to_datetime(data['timestamp'], format = date_format, utc=not cet_cest)
-        if cet_cest:
-            zurich = pytz.timezone('Europe/Zurich')
-            data['timestamp'] = data['timestamp'].apply(lambda date: zurich.localize(date, is_dst=None).astimezone(pytz.utc))
+            data.drop('timestamp_cet', axis=1, inplace=True)
+        if 'timestamp_utc' in data:
+            data.rename(columns={"timestamp_utc": "timestamp"}, inplace=True)
+        data['timestamp'] = pd.to_datetime(data['timestamp'], format = date_format, utc=True)
         data.set_index('timestamp', inplace = True) #set "timestamp" as the index column and delete the old index column (inpace -> instead of creating a new dataframe, override the old one)
 
     data.replace('.', 0, inplace = True) #repalce al the missing values (represented as .) with a 0
@@ -240,9 +239,7 @@ def try_import_csv_file(config, station, file_name):
     if os.path.isfile(file_name): #does the path point to a file?
         logging.info('\tLoad ' + file_name)
         for chunk in pd.read_csv(file_name, delimiter = ',', chunksize = config.historic_data_chunksize): #read the csv file in chunks
-            chunk = __define_types(chunk, '%Y-%m-%dT%H:%M:%S', True) #preprocess data
-            
-            # TODO here the time is not utc but CET and in the summer CEST
+            chunk = __define_types(chunk, '%Y-%m-%dT%H:%M:%S%z') #preprocess data
             logging.info('Add ' + station + ' from ' + str(chunk.index[0]) + ' to ' + str(chunk.index[-1]))
             __add_data_to_db(config, chunk, station) #add data to database
 
