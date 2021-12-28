@@ -115,7 +115,6 @@ def __get_data_of_day(day, station, periodic_retry = False):
         'startDate': day_str,
         'endDate': day_str
     }
-    url = format_url(base_url, station)
     url = f'{base_url}{station}'
     while True:
         try:
