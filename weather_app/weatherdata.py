@@ -29,12 +29,15 @@ from requests.models import HTTPError
 import calendar
 import main as update
 import pytz
+import configparser
+config = configparser.ConfigParser()
+config.read('config.ini')
 
 
 class Config:
-    db_host = 'localhost' #database host
-    db_port = 8086 #port from database
-    db_name = 'meteorology' #database name
+    db_host = config['Database']['DB_Host'] #database host
+    db_port = config['Database']['DB_Port'] #port from database
+    db_name = config['Database']['DB_Name'] #database name
     stations = ['mythenquai', 'tiefenbrunnen'] #table names
     stations_force_query_last_entry = False
     stations_last_entries = {} #last entries in database
@@ -105,14 +108,15 @@ def __extract_last_db_day(last_entry, station, default_last_db_day):
 
 def __get_data_of_day(day, station, periodic_retry = False):
     # convert to local time of station
-    base_url = 'https://tecdottir.herokuapp.com/measurements/{}'
+    base_url = config['Service']['URL']
     day_str = day.strftime('%Y-%m-%d')
     logging.info('Query ' + station + ' at ' + day_str)
     payload = {
         'startDate': day_str,
         'endDate': day_str
     }
-    url = base_url.format(station)
+    url = format_url(base_url, station)
+    url = f'{base_url}{station}'
     while True:
         try:
             response = requests.get(url, params = payload)

@@ -31,13 +31,6 @@ def create_weather_chart():
     weatherimport.generate_plot_colMatrix([(weatherimport.Measurement.Air_temp, ("Temperatur", "T", "°C")), (weatherimport.Measurement.Humidity, ("Luftfeuchtigkeit", "", "%"))], "tiefenbrunnen", (datetime(2015, 1, 1), datetime.now()), imagePath=str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/Images/Temp_Hum_Hist_Tiefenbrunnen.png", title = "Historisches Plot")
     weatherimport.generate_windRose("mythenquai", (datetime(2015, 1, 1), datetime.now()), imagePath=str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/Images/WindRose_Hist_Mythenquai.png")
     weatherimport.generate_windRose("tiefenbrunnen", (datetime(2015, 1, 1), datetime.now()), imagePath=str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/Images/WindRose_Hist_Tiefenbrunnen.png")
-    
-    #todo save a IMAGE of the Weather in the Images Folder
-    pass
-
-def get_weather_store_in_data(data):
-    # TODO get Weather from influx and store it in the Context to refresh the / Route and show the weather
-    data = data
 
 
 def update_data():
@@ -75,7 +68,8 @@ def wetterstation(station: str):
         logging.warning("System not initialized")
         return render_template('load_data.html')
     
-    measurements = [weatherimport.Measurement.Air_temp,
+    measurements = [
+                    weatherimport.Measurement.Air_temp,
                     weatherimport.Measurement.Humidity,
                     weatherimport.Measurement.Wind_gust_max_10min,
                     weatherimport.Measurement.Wind_speed_avg_10min,
@@ -87,7 +81,8 @@ def wetterstation(station: str):
                     weatherimport.Measurement.Precipitation,
                     weatherimport.Measurement.Water_level,
                     weatherimport.Measurement.Pressure,
-                    weatherimport.Measurement.Radiation]
+                    weatherimport.Measurement.Radiation
+                  ]
     weather = weatherimport.get_measurements(measurements, station, "1d")
     weather = weather.sort_values(by=['time'], ascending=False).to_dict("records")[0]
     for key in weather:
