@@ -127,6 +127,7 @@ def wetterstation_details(station: str, category: str, type: str):
 
 
 if __name__ == "__main__":
+    
     handler = logging.handlers.RotatingFileHandler(
        str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/wettermonitor.log",
        maxBytes=(1048576),

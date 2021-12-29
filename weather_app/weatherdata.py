@@ -31,8 +31,7 @@ import main as update
 import pytz
 import configparser
 config = configparser.ConfigParser()
-config.read('config.ini')
-
+config.read(os.path.join(os.path.dirname(__file__), 'config.ini'))
 
 class Config:
     db_host = config['Database']['DB_Host'] #database host
