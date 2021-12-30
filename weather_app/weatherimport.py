@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 import os
 import logging
 from signal import default_int_handler
+from typing import List
+from pandas.core.frame import DataFrame
 import schedule
 import numpy as np
 import weatherdata as wd
@@ -263,8 +265,131 @@ def generate_today_graphs():
   # wind
   generate_wind_graph("tiefenbrunnen", "today")
   generate_wind_graph("mythenquai", "today")
-  # temperature
-  # water
+  ############################################# todays graphs #############################################
+
+  ## get data
+  mythenquai_df = get_measurements([Measurement.Air_temp, 
+                                                      Measurement.Humidity,
+                                                      Measurement.Water_temp,
+                                                      Measurement.Water_level,
+                                                      Measurement.Dew_point,
+                                                      Measurement.Pressure],
+                                    station = "mythenquai",
+                                    time_range = "1d")
+
+  tiefenbrunnen_df = get_measurements([Measurement.Air_temp, 
+                                                      Measurement.Humidity,
+                                                      Measurement.Water_temp,
+                                                      Measurement.Water_level,
+                                                      Measurement.Dew_point,
+                                                      Measurement.Pressure],
+                                        station = "tiefenbrunnen",
+                                        time_range = "1d")
+
+  ## convert to arrays
+  timestamps_mythenquai = np.array(mythenquai_df["time"].fillna(value = 0))
+  temperatur_mythenquai = np.array(mythenquai_df["air_temperature"].fillna(value = 0))
+  dewpoint_mythenquai = np.array(mythenquai_df["dew_point"].fillna(value = 0))
+  watertemp_mythenquai = np.array(mythenquai_df["water_temperature"].fillna(value = 0))
+  waterlevel_mythenquai = np.array(mythenquai_df["water_level"].fillna(value = 0))
+  pressure_mythenquai = np.array(mythenquai_df["barometric_pressure_qfe"].fillna(value = 0))
+
+  timestamps_tiefenbrunnen = np.array(tiefenbrunnen_df["time"].fillna(value = 0))
+  temperatur_tiefenbrunnen = np.array(tiefenbrunnen_df["air_temperature"].fillna(value = 0))
+  dewpoint_tiefenbrunnen = np.array(tiefenbrunnen_df["dew_point"].fillna(value = 0))
+  watertemp_tiefenbrunnen = np.array(tiefenbrunnen_df["water_temperature"].fillna(value = 0))
+  waterlevel_tiefenbrunnen = np.array(tiefenbrunnen_df["water_level"].fillna(value = 0))
+  pressure_tiefenbrunnen = np.array(tiefenbrunnen_df["barometric_pressure_qfe"].fillna(value = 0))
+
+  ## plots mythenquai (No watertemperature, waterlevel and pressure, because no data)
+  generate_simple_plot(station = "mythenquai",
+                                      measurements_array = temperatur_mythenquai,
+                                      timestamps = timestamps_mythenquai,
+                                      unit_symbols = ["Temperatur", "T", "°C"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/mythenquai_temperature_today.png",
+                                      ylim = (-15, 40),
+                                      dateformatter = "%d %b %H:%M",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+  generate_simple_plot(station = "mythenquai",
+                                      measurements_array = dewpoint_mythenquai,
+                                      timestamps = timestamps_mythenquai,
+                                      unit_symbols = ["Taupunkt", "T", "°C"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/mythenquai_dewpoint_today.png",
+                                      ylim = (-15, 40),
+                                      dateformatter = "%d %b %H:%M",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+  ## plots tiefenbrunnen
+
+  generate_simple_plot(station = "tiefenbrunnen",
+                                      measurements_array = temperatur_tiefenbrunnen,
+                                      timestamps = timestamps_tiefenbrunnen,
+                                      unit_symbols = ["Temperatur", "T", "°C"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_temperature_today.png",
+                                      ylim = (-15, 40),
+                                      dateformatter = "%d %b %H:%M",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+  generate_simple_plot(station = "tiefenbrunnen",
+                                      measurements_array = dewpoint_tiefenbrunnen,
+                                      timestamps = timestamps_tiefenbrunnen,
+                                      unit_symbols = ["Taupunkt", "T", "°C"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_dewpoint_today.png",
+                                      ylim = (-15, 40),
+                                      dateformatter = "%d %b %H:%M",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+  generate_simple_plot(station = "tiefenbrunnen",
+                                      measurements_array = waterlevel_tiefenbrunnen,
+                                      timestamps = timestamps_tiefenbrunnen,
+                                      unit_symbols = ["Wasserstand", "", "m.ü.m"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_waterlevel_today.png",
+                                      ylim = (-15, 40),
+                                      dateformatter = "%d %b %H:%M",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+  generate_simple_plot(station = "tiefenbrunnen",
+                                      measurements_array = watertemp_tiefenbrunnen,
+                                      timestamps = timestamps_tiefenbrunnen,
+                                      unit_symbols = ["Wassertemperatur", "T", "°C"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_watertemp_today.png",
+                                      ylim = (-15, 40),
+                                      dateformatter = "%d %b %H:%M",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+  generate_simple_plot(station = "tiefenbrunnen",
+                                      measurements_array = pressure_tiefenbrunnen,
+                                      timestamps = timestamps_tiefenbrunnen,
+                                      unit_symbols = ["Luftdruck", "P", "Pa"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_pressure_today.png",
+                                      ylim = (900, 1000),
+                                      dateformatter = "%d %b %H:%M",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+
+
   return schedule.CancelJob
 
 def generate_last_7_days_graphs():
@@ -272,8 +397,132 @@ def generate_last_7_days_graphs():
   # wind
   generate_wind_graph("tiefenbrunnen", "history")
   generate_wind_graph("mythenquai", "history")
-  # temperature
-  # water
+  
+  ############################################# this week graphs #############################################
+  ## get data
+  mythenquai_df = get_measurements([Measurement.Air_temp, 
+                                                      Measurement.Humidity,
+                                                      Measurement.Water_temp,
+                                                      Measurement.Water_level,
+                                                      Measurement.Dew_point,
+                                                      Measurement.Pressure],
+                                      station = "mythenquai",
+                                      time_range = "7d")
+
+  tiefenbrunnen_df = get_measurements([Measurement.Air_temp, 
+                                                      Measurement.Humidity,
+                                                      Measurement.Water_temp,
+                                                      Measurement.Water_level,
+                                                      Measurement.Dew_point,
+                                                      Measurement.Pressure],
+                                          station = "tiefenbrunnen",
+                                          time_range = "7d")
+
+  ## convert to arrays
+  timestamps_mythenquai = np.array(mythenquai_df["time"].fillna(value = 0))
+  temperatur_mythenquai = np.array(mythenquai_df["air_temperature"].fillna(value = 0))
+  dewpoint_mythenquai = np.array(mythenquai_df["dew_point"].fillna(value = 0))
+  watertemp_mythenquai = np.array(mythenquai_df["water_temperature"].fillna(value = 0))
+  waterlevel_mythenquai = np.array(mythenquai_df["water_level"].fillna(value = 0))
+  pressure_mythenquai = np.array(mythenquai_df["barometric_pressure_qfe"].fillna(value = 0))
+
+  timestamps_tiefenbrunnen = np.array(tiefenbrunnen_df["time"].fillna(value = 0))
+  temperatur_tiefenbrunnen = np.array(tiefenbrunnen_df["air_temperature"].fillna(value = 0))
+  dewpoint_tiefenbrunnen = np.array(tiefenbrunnen_df["dew_point"].fillna(value = 0))
+  watertemp_tiefenbrunnen = np.array(tiefenbrunnen_df["water_temperature"].fillna(value = 0))
+  waterlevel_tiefenbrunnen = np.array(tiefenbrunnen_df["water_level"].fillna(value = 0))
+  pressure_tiefenbrunnen = np.array(tiefenbrunnen_df["barometric_pressure_qfe"].fillna(value = 0))
+
+
+
+  ## plots mythenquai (No watertemperature, waterlevel and pressure, because no data)
+  generate_simple_plot(station = "mythenquai",
+                                      measurements_array = temperatur_mythenquai,
+                                      timestamps = timestamps_mythenquai,
+                                      unit_symbols = ["Temperatur", "T", "°C"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/mythenquai_temperature_history.png",
+                                      ylim = (-15, 40),
+                                      dateformatter = "%d %b",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+  generate_simple_plot(station = "mythenquai",
+                                      measurements_array = dewpoint_mythenquai,
+                                      timestamps = timestamps_mythenquai,
+                                      unit_symbols = ["Taupunkt", "T", "°C"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/mythenquai_dewpoint_history.png",
+                                      ylim = (-15, 40),
+                                      dateformatter = "%d %b",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+  ## plots tiefenbrunnen
+
+  generate_simple_plot(station = "tiefenbrunnen",
+                                      measurements_array = temperatur_tiefenbrunnen,
+                                      timestamps = timestamps_tiefenbrunnen,
+                                      unit_symbols = ["Temperatur", "T", "°C"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_temperature_history.png",
+                                      ylim = (-15, 40),
+                                      dateformatter = "%d %b",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+  generate_simple_plot(station = "tiefenbrunnen",
+                                      measurements_array = dewpoint_tiefenbrunnen,
+                                      timestamps = timestamps_tiefenbrunnen,
+                                      unit_symbols = ["Taupunkt", "T", "°C"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_dewpoint_history.png",
+                                      ylim = (-15, 40),
+                                      dateformatter = "%d %b",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+  generate_simple_plot(station = "tiefenbrunnen",
+                                      measurements_array = waterlevel_tiefenbrunnen,
+                                      timestamps = timestamps_tiefenbrunnen,
+                                      unit_symbols = ["Wasserstand", "", "m.ü.m"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_waterlevel_history.png",
+                                      ylim = (-15, 40),
+                                      dateformatter = "%d %b",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+  generate_simple_plot(station = "tiefenbrunnen",
+                                      measurements_array = watertemp_tiefenbrunnen,
+                                      timestamps = timestamps_tiefenbrunnen,
+                                      unit_symbols = ["Wassertemperatur", "T", "°C"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_watertemp_history.png",
+                                      ylim = (-15, 40),
+                                      dateformatter = "%d %b",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+  generate_simple_plot(station = "tiefenbrunnen",
+                                      measurements_array = pressure_tiefenbrunnen,
+                                      timestamps = timestamps_tiefenbrunnen,
+                                      unit_symbols = ["Luftdruck", "P", "Pa"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_pressure_history.png",
+                                      ylim = (900, 1000),
+                                      dateformatter = "%d %b",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+  
   pass
 
 
@@ -282,6 +531,7 @@ def generate_prediction_graphs():
   # wind
   # temperature
   # water
+  # Humidity
   pass
 
 
@@ -414,6 +664,106 @@ def generate_plot_colMatrix(measurements : list(tuple((Measurement, tuple((str, 
     plt.show()
   else:
     plt.savefig(imagePath, bbox_inches='tight')
+
+## get max value and position in df
+def get_ymax(df_col = np.array):
+    temp_df = df_col[df_col != np.array(None)]
+    xpos_max = 0
+    ymax = 0
+    for i in range(len(temp_df)):
+        if temp_df[i] > ymax:
+            ymax = temp_df[i]
+            xpos_max = i
+    return [ymax, xpos_max]
+
+## get min value and position in df
+def get_ymin(df_col = np.array):
+    temp_df = df_col[df_col != np.array(None)]
+    xpos_min = 0
+    ymin = 100000000
+    for i in range(len(temp_df)):
+        if temp_df[i] < ymin:
+            ymin = temp_df[i]
+            xpos_min = i
+    return [ymin, xpos_min]
+
+def generate_simple_plot(station, 
+                        measurements_array,
+                        timestamps,
+                        unit_symbols = List, 
+                        imagepath = str,
+                        ylim = List,
+                        dateformatter = str, 
+                        showMin = True, 
+                        showMean = True, 
+                        showMax = True
+                        ):
+  """
+  create simple plot
+
+  Parameters:
+  station (str) 
+  measurements (numpy array) array with measurements for the plot
+  timestamps (numpy array) array with measurements for the plot needs to have the same lenght as measurements
+  unit_symbols (List(Name, Unit, Symbol)) z.B: für Temperatur (Temperatur, T, °C)
+  imagepath (str) imagepath where png is saved to
+  xlim (List(left, right)) X-Axis limitter
+  ylim (List(Top, Bottom)) Y-Axis limitter
+  dateformatter (str) formatter for timestamps
+  showMin (Bool --> Default = True) plot red point and value for Min Value
+  showMean (Bool --> Default = True) plot red horizontal line and value for Mean Value
+  showMax (Bool --> Default = True) plot red point and value for Max Value
+  """
+  ## Exception for lack of values
+  if len(measurements_array) <= 1:
+    raise Exception("Es müssen mindestens 2 measurements angegeben werden!")
+  
+  ## generate axs and figure
+  fig, ax = plt.subplots()
+
+  ## statistics / annotations
+  if showMin:
+    ymin, xpos_min = get_ymin(np.array(measurements_array))
+    ax.scatter(x = timestamps[xpos_min], 
+                y = ymin, 
+                color = "red", 
+                label = f"Min: {round(ymin, 2)}{unit_symbols[2]}")
+
+  if showMean:
+    ymean = np.nanmean(measurements_array)
+    ax.axhline(y = ymean, 
+                color = "red", 
+                label = f"Mean: {round(ymean, 2)}{unit_symbols[2]}")
+
+  if showMax:
+    ymax, xpos_max = get_ymax(np.array(measurements_array))
+    ax.scatter(x = timestamps[xpos_max], 
+                y = ymax, 
+                color = "red", 
+                label = f"Max: {round(ymax, 2)}{unit_symbols[2]}")
+
+  ## plot axis
+  ax.plot(timestamps, measurements_array, label = f"Aktueller Wert: {round(measurements_array[-1], 2)}{unit_symbols[2]}")
+
+  ## set axis attributes
+  ax.legend(loc = "center left",  bbox_to_anchor=(1.02, 0.8))
+  ax.grid()
+  ax.set_title(f"Number of measuremens: {len(np.array(measurements_array))}", fontsize = 18)
+  ax.set_ylabel(f"{unit_symbols[0]} {unit_symbols[1]} in {unit_symbols[2]}", fontsize = 20)
+  ax.set_xlabel(f"Zeitachse", fontsize = 20)
+  ax.set_ylim(ylim[0], ylim[1])
+  ax.xaxis.set_major_formatter(mpl_dates.DateFormatter(dateformatter))
+
+ ## set figure attributes
+  fig.set_figheight(15)
+  fig.set_figwidth(20)
+  fig.suptitle(f"Wetterstation {station}: {unit_symbols[0]} {unit_symbols[1]} in {unit_symbols[2]}", fontsize = 24, fontweight = "bold")
+  fig.autofmt_xdate()
+  fig.tight_layout()
+
+  # save plot
+  plt.savefig(imagepath, bbox_inches='tight')
+
 
 def generate_plot_rowMatrix(measurements : list(tuple((Measurement, tuple((str, str, str))))), station : str, time_range, showPlot = False, imagePath = None, showMean = False, showMax = False, showMin = False, title = str ):
   """
