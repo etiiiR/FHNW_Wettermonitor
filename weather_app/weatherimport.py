@@ -746,23 +746,26 @@ def generate_simple_plot(station,
   ax.plot(timestamps, measurements_array, label = f"Aktueller Wert: {round(measurements_array[-1], 2)}{unit_symbols[2]}")
 
   ## set axis attributes
-  ax.legend(loc = "center left",  bbox_to_anchor=(1.02, 0.8))
+  ax.legend(loc = "center left",  bbox_to_anchor=(1.02, 0.8), fontsize = 6)
   ax.grid()
-  ax.set_title(f"Number of measuremens: {len(np.array(measurements_array))}", fontsize = 18)
-  ax.set_ylabel(f"{unit_symbols[0]} {unit_symbols[1]} in {unit_symbols[2]}", fontsize = 20)
-  ax.set_xlabel(f"Zeitachse", fontsize = 20)
+  ax.set_title(f"Number of measuremens: {len(np.array(measurements_array))}", fontsize = 6)
+  ax.set_ylabel(f"{unit_symbols[0]} {unit_symbols[1]} in {unit_symbols[2]}", fontsize = 8)
+  ax.set_xlabel(f"Zeitachse", fontsize = 6)
   ax.set_ylim(ylim[0], ylim[1])
   ax.xaxis.set_major_formatter(mpl_dates.DateFormatter(dateformatter))
 
  ## set figure attributes
-  fig.set_figheight(15)
-  fig.set_figwidth(20)
-  fig.suptitle(f"Wetterstation {station}: {unit_symbols[0]} {unit_symbols[1]} in {unit_symbols[2]}", fontsize = 24, fontweight = "bold")
+  fig.set_figheight(3)
+  fig.set_figwidth(6)
+  fig.suptitle(f"Wetterstation {station}: {unit_symbols[0]} {unit_symbols[1]} in {unit_symbols[2]}", fontsize = 6, fontweight = "bold")
   fig.autofmt_xdate()
   fig.tight_layout()
 
+  #set ticksize 
+  plt.xticks(fontsize = 6)
+
   # save plot
-  plt.savefig(imagepath, bbox_inches='tight')
+  plt.savefig(imagepath, bbox_inches='tight', dpi = 500)
   plt.close(fig)
 
 
