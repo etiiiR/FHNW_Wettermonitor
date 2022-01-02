@@ -6,8 +6,28 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import random
+from datetime import datetime, timedelta
+import os
+from pathlib import Path
+import time
+import schedule
+import logging
+import logging.handlers
+from flask import Flask  
+from flask import render_template, redirect
+from flaskwebgui import FlaskUI
+#https://github.com/btashton/flask-influxdb
+from flask_influxdb import InfluxDB
+import weatherimport
+import threading
+
+
 
 wd.init()
+
+weatherimport.generate_today_graphs()
+weatherimport.generate_last_7_days_graphs()
+
 #print(wd.get_all_measurements("mythenquai", "1d"))
 
 #print(wd.get_measurement(wd.Measurement.Humidity, "mythenquai", "1d"))
@@ -16,7 +36,7 @@ wd.init()
 
 #wd.generate_spline([wd.Measurement.Air_temp], "mythenquai", "20w", "Temperatur T in °C", showPlot = True, imagePath = "image1.png")
 
-wd.generate_plot_colMatrix([(wd.Measurement.Air_temp, ("Temperatur", "T", "°C")), (wd.Measurement.Humidity, ("Luftfeuchtigkeit", "φ", "%"))], "mythenquai", "1w", showPlot = True, imagePath = "image2.png", title = "Tagesplot")
+#wd.generate_plot_colMatrix([(wd.Measurement.Air_temp, ("Temperatur", "T", "°C")), (wd.Measurement.Humidity, ("Luftfeuchtigkeit", "φ", "%"))], "mythenquai", "1w", showPlot = True, imagePath = "image2.png", title = "Tagesplot")
 
 #wd.generate_plot_rowMatrix([(wd.Measurement.Air_temp, ("Temperatur", "T", "°C")), (wd.Measurement.Humidity, ("Luftfeuchtigkeit", "φ", "%"))], "mythenquai", (datetime(2021, 9, 1), datetime.now()), showPlot = True, imagePath = "image3.png")
 
@@ -82,83 +102,83 @@ wd.generate_plot_colMatrix([(wd.Measurement.Air_temp, ("Temperatur", "T", "°C")
 #print(wd.construct_day_vector(table_day, [(0, 5, 1), (0, 3, 1)]))
 #print(wd.construct_day_vector_old(table_day1, [(0, 5, 1), (0, 3, 1)]))
 
-def generateRandomDate(startDate, endDate) -> datetime:
-    time_between_dates = endDate - startDate
-    days_between_dates = time_between_dates.days
+# def generateRandomDate(startDate, endDate) -> datetime:
+#     time_between_dates = endDate - startDate
+#     days_between_dates = time_between_dates.days
 
-    random_number_of_days = random.randrange(days_between_dates)
-    return startDate + timedelta(days=random_number_of_days)
+#     random_number_of_days = random.randrange(days_between_dates)
+#     return startDate + timedelta(days=random_number_of_days)
 
-numberOfDates = 100
-startDate = datetime(2008, 1, 1)
-endDate = datetime(2020, 12, 1)
+# numberOfDates = 100
+# startDate = datetime(2008, 1, 1)
+# endDate = datetime(2020, 12, 1)
 
-dates = []
-random.seed(53165441847244654)
-for i in range(0, numberOfDates):
-    date = generateRandomDate(startDate, endDate)
-    dates.append(datetime(date.year, date.month, date.day))
+# dates = []
+# random.seed(53165441847244654)
+# for i in range(0, numberOfDates):
+#     date = generateRandomDate(startDate, endDate)
+#     dates.append(datetime(date.year, date.month, date.day))
 
-predictions = []
-for date in dates:
-    try:
-        prediction = wd.forecast_of_tomorrow("mythenquai", date)[0]
-        predictions.append((date, prediction))
+# predictions = []
+# for date in dates:
+#     try:
+#         prediction = wd.forecast_of_tomorrow("mythenquai", date)[0]
+#         predictions.append((date, prediction))
     
-    except:
-        print("Target day: ", date, " couldn't be forecasted... skip")
+#     except:
+#         print("Target day: ", date, " couldn't be forecasted... skip")
     
 
-#comparison
-nextDateAlgorithm_mean = []
-nearestNeighbourAlgorithm_mean = []
-nextDateAlgorithm_std = []
-nearestNeighbourAlgorithm_std = []
-for prediction in predictions:
-    targetDate = prediction[0]
-    targetTimeRange =  (datetime(targetDate.year, targetDate.month, targetDate.day, 0, 0, 1), datetime(targetDate.year, targetDate.month, targetDate.day, 23, 59, 59)) 
-    nearestNDate = prediction[1]
-    print("nearest n date: ", nearestNDate)
-    nearestNDateTimeRange =  (datetime(nearestNDate.year, nearestNDate.month, nearestNDate.day, 0, 0, 1), datetime(nearestNDate.year, nearestNDate.month, nearestNDate.day, 23, 59, 59)) 
-    nextDate = targetDate + timedelta(days=1)
-    nextDateTimeRange =  (datetime(nextDate.year, nextDate.month, nextDate.day, 0, 0, 1), datetime(nextDate.year, nextDate.month, nextDate.day, 23, 59, 59)) 
+# #comparison
+# nextDateAlgorithm_mean = []
+# nearestNeighbourAlgorithm_mean = []
+# nextDateAlgorithm_std = []
+# nearestNeighbourAlgorithm_std = []
+# for prediction in predictions:
+#     targetDate = prediction[0]
+#     targetTimeRange =  (datetime(targetDate.year, targetDate.month, targetDate.day, 0, 0, 1), datetime(targetDate.year, targetDate.month, targetDate.day, 23, 59, 59)) 
+#     nearestNDate = prediction[1]
+#     print("nearest n date: ", nearestNDate)
+#     nearestNDateTimeRange =  (datetime(nearestNDate.year, nearestNDate.month, nearestNDate.day, 0, 0, 1), datetime(nearestNDate.year, nearestNDate.month, nearestNDate.day, 23, 59, 59)) 
+#     nextDate = targetDate + timedelta(days=1)
+#     nextDateTimeRange =  (datetime(nextDate.year, nextDate.month, nextDate.day, 0, 0, 1), datetime(nextDate.year, nextDate.month, nextDate.day, 23, 59, 59)) 
     
-    data_target = wd.get_measurement(wd.Measurement.Air_temp, "mythenquai", targetTimeRange)
-    data_nearestN = wd.get_measurement(wd.Measurement.Air_temp, "mythenquai", nearestNDateTimeRange)
-    data_nextDate = wd.get_measurement(wd.Measurement.Air_temp, "mythenquai", nextDateTimeRange)
+#     data_target = wd.get_measurement(wd.Measurement.Air_temp, "mythenquai", targetTimeRange)
+#     data_nearestN = wd.get_measurement(wd.Measurement.Air_temp, "mythenquai", nearestNDateTimeRange)
+#     data_nextDate = wd.get_measurement(wd.Measurement.Air_temp, "mythenquai", nextDateTimeRange)
     
-    mean_temp_target = np.nanmean(data_target["air_temperature"].tolist())
-    mean_temp_nearestN = np.nanmean(data_nearestN["air_temperature"].tolist())
-    mean_temp_data_nextDate = np.nanmean(data_nextDate["air_temperature"].tolist())
+#     mean_temp_target = np.nanmean(data_target["air_temperature"].tolist())
+#     mean_temp_nearestN = np.nanmean(data_nearestN["air_temperature"].tolist())
+#     mean_temp_data_nextDate = np.nanmean(data_nextDate["air_temperature"].tolist())
 
-    std_temp_target = np.nanstd(data_target["air_temperature"].tolist())
-    std_temp_nearestN = np.nanstd(data_nearestN["air_temperature"].tolist())
-    std_temp_data_nextDate  = np.nanstd(data_nextDate["air_temperature"].tolist())
+#     std_temp_target = np.nanstd(data_target["air_temperature"].tolist())
+#     std_temp_nearestN = np.nanstd(data_nearestN["air_temperature"].tolist())
+#     std_temp_data_nextDate  = np.nanstd(data_nextDate["air_temperature"].tolist())
 
-    difference_mean_nearestN = np.abs(mean_temp_target - mean_temp_nearestN)
-    difference_mean_nextDate = np.abs(mean_temp_target - mean_temp_data_nextDate)
+#     difference_mean_nearestN = np.abs(mean_temp_target - mean_temp_nearestN)
+#     difference_mean_nextDate = np.abs(mean_temp_target - mean_temp_data_nextDate)
 
-    difference_std_nearestN = np.abs(std_temp_target - std_temp_nearestN)
-    difference_std_nextDate = np.abs(std_temp_target - std_temp_data_nextDate)
+#     difference_std_nearestN = np.abs(std_temp_target - std_temp_nearestN)
+#     difference_std_nextDate = np.abs(std_temp_target - std_temp_data_nextDate)
 
-    nearestNeighbourAlgorithm_mean.append(difference_mean_nearestN)
-    nextDateAlgorithm_mean.append(difference_mean_nextDate)
-    nearestNeighbourAlgorithm_std.append(difference_std_nearestN)
-    nextDateAlgorithm_std.append(difference_std_nextDate)
+#     nearestNeighbourAlgorithm_mean.append(difference_mean_nearestN)
+#     nextDateAlgorithm_mean.append(difference_mean_nextDate)
+#     nearestNeighbourAlgorithm_std.append(difference_std_nearestN)
+#     nextDateAlgorithm_std.append(difference_std_nextDate)
 
-print("Accuracy nearest neighbour (mean difference): +-", np.mean(nearestNeighbourAlgorithm_mean), " °C")
-print("Accuracy next date (mean difference): +-", np.mean(nextDateAlgorithm_mean), " °C") 
-print("Accuracy nearest neighbour (standard deviation difference): +-", np.mean(nearestNeighbourAlgorithm_std), " °C")
-print("Accuracy next date (standard deviation difference): +-", np.mean(nextDateAlgorithm_std), " °C") 
-
-
+# print("Accuracy nearest neighbour (mean difference): +-", np.mean(nearestNeighbourAlgorithm_mean), " °C")
+# print("Accuracy next date (mean difference): +-", np.mean(nextDateAlgorithm_mean), " °C") 
+# print("Accuracy nearest neighbour (standard deviation difference): +-", np.mean(nearestNeighbourAlgorithm_std), " °C")
+# print("Accuracy next date (standard deviation difference): +-", np.mean(nextDateAlgorithm_std), " °C") 
 
 
 
-""" #test construct_window_vector
-dataFrame = wd.get_measurements([wd.Measurement.Air_temp, wd.Measurement.Humidity], "mythenquai", (datetime(2020, 5, 1, 13, 0), datetime(2020, 5, 1, 13, 50)), keepIndex=True)
-dataFrame.iloc[-1, -1] = None
 
-print(dataFrame)
 
-print(wd.construct_window_vector(dataFrame, [(-10, 10, 1), (-40, 40, 0.2)])) """
+# """ #test construct_window_vector
+# dataFrame = wd.get_measurements([wd.Measurement.Air_temp, wd.Measurement.Humidity], "mythenquai", (datetime(2020, 5, 1, 13, 0), datetime(2020, 5, 1, 13, 50)), keepIndex=True)
+# dataFrame.iloc[-1, -1] = None
+
+# print(dataFrame)
+
+# print(wd.construct_window_vector(dataFrame, [(-10, 10, 1), (-40, 40, 0.2)])) """
