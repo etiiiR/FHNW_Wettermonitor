@@ -763,6 +763,7 @@ def generate_simple_plot(station,
 
   # save plot
   plt.savefig(imagepath, bbox_inches='tight')
+  plt.close(fig)
 
 
 def generate_plot_rowMatrix(measurements : list(tuple((Measurement, tuple((str, str, str))))), station : str, time_range, showPlot = False, imagePath = None, showMean = False, showMax = False, showMin = False, title = str ):
