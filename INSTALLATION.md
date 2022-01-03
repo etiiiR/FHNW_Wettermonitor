@@ -29,8 +29,14 @@ Im Terminal folgender Befehl ausführen und warten bis Wetterdaten erscheinen (k
 curl -s https://raw.githubusercontent.com/etiiiR/FHNW_Wettermonitor/main/install.sh | bash
 ```
 
+
 # Aktualisieren
+## Änderungen holen
 ```bash
 cd ~/FHNW_Wettermonitor
 git pull
+```
+## Service neustarten
+```bash
+sudo systemctl restart kiosk.service
 ```
