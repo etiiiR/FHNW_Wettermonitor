@@ -7,9 +7,9 @@ sudo apt-get clean
 sudo apt-get autoremove -y
 
 echo "optimizing boot"
-echo "disable_splash=1" | sudo tee -a /boot/config.txt >
-echo "dtoverlay=disable-bt" | sudo tee -a /boot/config.txt >
-echo "boot_delay=0" | sudo tee -a /boot/config.txt >
+echo "disable_splash=1" | sudo tee -a /boot/config.txt > /dev/null
+echo "dtoverlay=disable-bt" | sudo tee -a /boot/config.txt > /dev/null
+echo "boot_delay=0" | sudo tee -a /boot/config.txt > /dev/null
 
 
 sudo apt-get update
