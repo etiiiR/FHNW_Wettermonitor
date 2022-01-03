@@ -157,8 +157,6 @@ if __name__ == "__main__":
     # generate graphs the first time
     weatherimport.generate_today_graphs()
     weatherimport.generate_last_7_days_graphs()
-
-    # TODO the prediction needs to be created first
     weatherimport.generate_prediction_graphs() 
 
     check_for_pending_jobs()

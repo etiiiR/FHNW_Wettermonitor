@@ -209,11 +209,15 @@ def reset_graphs():
           for type in ["today", "tomorrow", "history"]:
               shutil.copyfile(static_images+"/generating_plot.png", f"{get_graph_location()}/{station}_{category}_{type}.png")
 
-def generate_wind_graph(station, type):
-  if type != "history" and type != "today":
+def generate_wind_graph(station, type, time_range = None):
+  if type != "history" and type != "today" and type != "tomorrow":
     raise Exception(f"Unknown type: {type}")
+  
+  if type == "tomorrow":
+    wind = get_measurements(wind_measurements, station, time_range)
+  else:
+    wind = get_measurements(wind_measurements, station, "7d" if type == "history" else "1d")
 
-  wind = get_measurements(wind_measurements, station, "7d" if type == "history" else "1d")
   if type == "history":
     # aggregate window every 1 hour
     wind = wind.resample('H', on='time').agg(
@@ -290,9 +294,6 @@ def generate_today_graphs():
   timestamps_mythenquai = np.array(mythenquai_df["time"].fillna(value = 0))
   temperatur_mythenquai = np.array(mythenquai_df["air_temperature"].fillna(value = 0))
   dewpoint_mythenquai = np.array(mythenquai_df["dew_point"].fillna(value = 0))
-  watertemp_mythenquai = np.array(mythenquai_df["water_temperature"].fillna(value = 0))
-  waterlevel_mythenquai = np.array(mythenquai_df["water_level"].fillna(value = 0))
-  pressure_mythenquai = np.array(mythenquai_df["barometric_pressure_qfe"].fillna(value = 0))
 
   timestamps_tiefenbrunnen = np.array(tiefenbrunnen_df["time"].fillna(value = 0))
   temperatur_tiefenbrunnen = np.array(tiefenbrunnen_df["air_temperature"].fillna(value = 0))
@@ -416,9 +417,6 @@ def generate_last_7_days_graphs():
   timestamps_mythenquai = np.array(mythenquai_df["time"].fillna(value = 0))
   temperatur_mythenquai = np.array(mythenquai_df["air_temperature"].fillna(value = 0))
   dewpoint_mythenquai = np.array(mythenquai_df["dew_point"].fillna(value = 0))
-  watertemp_mythenquai = np.array(mythenquai_df["water_temperature"].fillna(value = 0))
-  waterlevel_mythenquai = np.array(mythenquai_df["water_level"].fillna(value = 0))
-  pressure_mythenquai = np.array(mythenquai_df["barometric_pressure_qfe"].fillna(value = 0))
 
   timestamps_tiefenbrunnen = np.array(tiefenbrunnen_df["time"].fillna(value = 0))
   temperatur_tiefenbrunnen = np.array(tiefenbrunnen_df["air_temperature"].fillna(value = 0))
@@ -510,17 +508,140 @@ def generate_last_7_days_graphs():
                                       showMax = True
                                       )
 
-  
-  pass
-
 
 def generate_prediction_graphs():
   logging.info("#generate_prediction_graphs()")
+  date = datetime.now(pytz.utc) + timedelta(days=-1)
+  ## tiefenbrunnen
+  forecast_date, df = forecast_of_tomorrow("tiefenbrunnen", date)
+  logging.info(f"nearest date to {date} for tiefenbrunnen: {forecast_date}")
+
   # wind
-  # temperature
-  # water
-  # Humidity
-  pass
+  start_date = forecast_date.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=pytz.timezone('Europe/Zurich'))
+  end_date = start_date + timedelta(days=1)
+  time_range = (start_date.astimezone(pytz.utc), end_date.astimezone(pytz.utc))
+  
+  generate_wind_graph("tiefenbrunnen", "tomorrow", time_range)
+
+  tiefenbrunnen_df = get_measurements([
+                                        Measurement.Air_temp, 
+                                        Measurement.Humidity,
+                                        Measurement.Water_temp,
+                                        Measurement.Water_level,
+                                        Measurement.Dew_point,
+                                        Measurement.Pressure
+                                      ],
+                                      station = "tiefenbrunnen",
+                                      time_range = time_range)
+
+  timestamps_tiefenbrunnen = np.array(tiefenbrunnen_df["time"].fillna(value = 0))
+  temperatur_tiefenbrunnen = np.array(tiefenbrunnen_df["air_temperature"].fillna(value = 0))
+  dewpoint_tiefenbrunnen = np.array(tiefenbrunnen_df["dew_point"].fillna(value = 0))
+  watertemp_tiefenbrunnen = np.array(tiefenbrunnen_df["water_temperature"].fillna(value = 0))
+  waterlevel_tiefenbrunnen = np.array(tiefenbrunnen_df["water_level"].fillna(value = 0))
+  pressure_tiefenbrunnen = np.array(tiefenbrunnen_df["barometric_pressure_qfe"].fillna(value = 0))
+
+  generate_simple_plot(station = "tiefenbrunnen",
+                                      measurements_array = temperatur_tiefenbrunnen,
+                                      timestamps = timestamps_tiefenbrunnen,
+                                      unit_symbols = ["Temperatur", "T", "°C"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_temperature_tomorrow.png",
+                                      dateformatter = "%H:%M",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+  generate_simple_plot(station = "tiefenbrunnen",
+                                      measurements_array = dewpoint_tiefenbrunnen,
+                                      timestamps = timestamps_tiefenbrunnen,
+                                      unit_symbols = ["Taupunkt", "T", "°C"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_dewpoint_tomorrow.png",
+                                      dateformatter = "%H:%M",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+  generate_simple_plot(station = "tiefenbrunnen",
+                                      measurements_array = waterlevel_tiefenbrunnen,
+                                      timestamps = timestamps_tiefenbrunnen,
+                                      unit_symbols = ["Wasserstand", "", "m.ü.m"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_waterlevel_tomorrow.png",
+                                      dateformatter = "%H:%M",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+  generate_simple_plot(station = "tiefenbrunnen",
+                                      measurements_array = watertemp_tiefenbrunnen,
+                                      timestamps = timestamps_tiefenbrunnen,
+                                      unit_symbols = ["Wassertemperatur", "T", "°C"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_watertemp_tomorrow.png",
+                                      dateformatter = "%H:%M",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+  generate_simple_plot(station = "tiefenbrunnen",
+                                      measurements_array = pressure_tiefenbrunnen,
+                                      timestamps = timestamps_tiefenbrunnen,
+                                      unit_symbols = ["Luftdruck", "P", "Pa"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_pressure_tomorrow.png",
+                                      ylim = (900, 1000),
+                                      dateformatter = "%H:%M",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+  ## mythenquai
+  forecast_date, df = forecast_of_tomorrow("mythenquai", date)
+  logging.info(f"nearest date to {date} for mythenquai: {forecast_date}")
+
+  # wind
+  start_date = forecast_date.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=pytz.timezone('Europe/Zurich'))
+  end_date = start_date + timedelta(days=1)
+  time_range = (start_date.astimezone(pytz.utc), end_date.astimezone(pytz.utc))
+  generate_wind_graph("mythenquai", "tomorrow", time_range)
+  
+  mythenquai_df = get_measurements([Measurement.Air_temp, 
+                                                      Measurement.Humidity,
+                                                      Measurement.Water_temp,
+                                                      Measurement.Water_level,
+                                                      Measurement.Dew_point,
+                                                      Measurement.Pressure],
+                                    station = "mythenquai",
+                                    time_range = time_range)
+
+  timestamps_mythenquai = np.array(mythenquai_df["time"].fillna(value = 0))
+  temperatur_mythenquai = np.array(mythenquai_df["air_temperature"].fillna(value = 0))
+  dewpoint_mythenquai = np.array(mythenquai_df["dew_point"].fillna(value = 0))
+
+  ## plots mythenquai (No watertemperature, waterlevel and pressure, because no data)
+  generate_simple_plot(station = "mythenquai",
+                                      measurements_array = temperatur_mythenquai,
+                                      timestamps = timestamps_mythenquai,
+                                      unit_symbols = ["Temperatur", "T", "°C"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/mythenquai_temperature_tomorrow.png",
+                                      dateformatter = "%H:%M",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
+
+  generate_simple_plot(station = "mythenquai",
+                                      measurements_array = dewpoint_mythenquai,
+                                      timestamps = timestamps_mythenquai,
+                                      unit_symbols = ["Taupunkt", "T", "°C"],
+                                      imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/mythenquai_dewpoint_tomorrow.png",
+                                      dateformatter = "%H:%M",
+                                      showMin = True,
+                                      showMean = True,
+                                      showMax = True
+                                      )
 
 
 def generate_spline(measurements : list(Measurement), station : str, time_range, ylabel_name : str, showPlot = False, imagePath = None):
@@ -1196,7 +1317,7 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
 
   return best_date
 
-def forecast_of_tomorrow(station: str, date_searchBestRecord: datetime):
+def forecast_of_tomorrow(station: str, date_searchBestRecord: datetime) -> tuple[datetime, pd.DataFrame]:
   """
   Get date and values of a day  which is the closest to date_searchBestRecord by cos simularity 
   
@@ -1210,11 +1331,14 @@ def forecast_of_tomorrow(station: str, date_searchBestRecord: datetime):
 
   possibleMeasurements = [Measurement.Air_temp, Measurement.Humidity]
   config_possibleMeasurements = [(-10, 10, 1), (-40, 40, 0)]
-  
-  dateOnly = datetime(date_searchBestRecord.year, date_searchBestRecord.month, date_searchBestRecord.day) #get date of date_searchBestRecord only
+
+  start_date = date_searchBestRecord.replace(hour=0, minute=0, second=0, microsecond=0)
+  end_date = start_date + timedelta(days=1)
+  start_date = start_date.astimezone(pytz.utc)
+  end_date = end_date.astimezone(pytz.utc)
 
   try:
-    test_measurement = get_all_measurements(station, (dateOnly, datetime(dateOnly.year, dateOnly.month, dateOnly.day, hour = 23, minute = 59, second = 59)), timeFilling=False)
+    test_measurement = get_all_measurements(station, (start_date, end_date), timeFilling=False)
   
   except Exception as ex:
     raise Exception("Forecast of this day couldn't be created: ", ex)
