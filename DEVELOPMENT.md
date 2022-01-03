@@ -1,7 +1,7 @@
 
 # Log anzeigen
 ```bash
-journalctl -u service-name -f
+journalctl -u kiosk.service -f
 ```
 
 # Configs ändern bei Service adressen
