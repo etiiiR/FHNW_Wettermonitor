@@ -847,7 +847,7 @@ def wind_direction_to_text(wind_direction):
         10: "Südwesten",
         11: "Westsüdwesten",
         12: "Westen",
-        13: "Westordwesten",
+        13: "Westnordwesten",
         14: "Nordwesten",
         15: "Nordnordwesten",
         16: "Norden"
