@@ -307,7 +307,6 @@ def generate_today_graphs():
                                       timestamps = timestamps_mythenquai,
                                       unit_symbols = ["Temperatur", "T", "°C"],
                                       imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/mythenquai_temperature_today.png",
-                                      ylim = (-15, 40),
                                       dateformatter = "%d %b %H:%M",
                                       showMin = True,
                                       showMean = True,
@@ -319,7 +318,6 @@ def generate_today_graphs():
                                       timestamps = timestamps_mythenquai,
                                       unit_symbols = ["Taupunkt", "T", "°C"],
                                       imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/mythenquai_dewpoint_today.png",
-                                      ylim = (-15, 40),
                                       dateformatter = "%d %b %H:%M",
                                       showMin = True,
                                       showMean = True,
@@ -333,7 +331,6 @@ def generate_today_graphs():
                                       timestamps = timestamps_tiefenbrunnen,
                                       unit_symbols = ["Temperatur", "T", "°C"],
                                       imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_temperature_today.png",
-                                      ylim = (-15, 40),
                                       dateformatter = "%d %b %H:%M",
                                       showMin = True,
                                       showMean = True,
@@ -345,7 +342,6 @@ def generate_today_graphs():
                                       timestamps = timestamps_tiefenbrunnen,
                                       unit_symbols = ["Taupunkt", "T", "°C"],
                                       imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_dewpoint_today.png",
-                                      ylim = (-15, 40),
                                       dateformatter = "%d %b %H:%M",
                                       showMin = True,
                                       showMean = True,
@@ -357,7 +353,6 @@ def generate_today_graphs():
                                       timestamps = timestamps_tiefenbrunnen,
                                       unit_symbols = ["Wasserstand", "", "m.ü.m"],
                                       imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_waterlevel_today.png",
-                                      ylim = (-15, 40),
                                       dateformatter = "%d %b %H:%M",
                                       showMin = True,
                                       showMean = True,
@@ -369,7 +364,6 @@ def generate_today_graphs():
                                       timestamps = timestamps_tiefenbrunnen,
                                       unit_symbols = ["Wassertemperatur", "T", "°C"],
                                       imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_watertemp_today.png",
-                                      ylim = (-15, 40),
                                       dateformatter = "%d %b %H:%M",
                                       showMin = True,
                                       showMean = True,
@@ -441,7 +435,6 @@ def generate_last_7_days_graphs():
                                       timestamps = timestamps_mythenquai,
                                       unit_symbols = ["Temperatur", "T", "°C"],
                                       imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/mythenquai_temperature_history.png",
-                                      ylim = (-15, 40),
                                       dateformatter = "%d %b",
                                       showMin = True,
                                       showMean = True,
@@ -453,7 +446,6 @@ def generate_last_7_days_graphs():
                                       timestamps = timestamps_mythenquai,
                                       unit_symbols = ["Taupunkt", "T", "°C"],
                                       imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/mythenquai_dewpoint_history.png",
-                                      ylim = (-15, 40),
                                       dateformatter = "%d %b",
                                       showMin = True,
                                       showMean = True,
@@ -467,7 +459,6 @@ def generate_last_7_days_graphs():
                                       timestamps = timestamps_tiefenbrunnen,
                                       unit_symbols = ["Temperatur", "T", "°C"],
                                       imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_temperature_history.png",
-                                      ylim = (-15, 40),
                                       dateformatter = "%d %b",
                                       showMin = True,
                                       showMean = True,
@@ -479,7 +470,6 @@ def generate_last_7_days_graphs():
                                       timestamps = timestamps_tiefenbrunnen,
                                       unit_symbols = ["Taupunkt", "T", "°C"],
                                       imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_dewpoint_history.png",
-                                      ylim = (-15, 40),
                                       dateformatter = "%d %b",
                                       showMin = True,
                                       showMean = True,
@@ -491,7 +481,6 @@ def generate_last_7_days_graphs():
                                       timestamps = timestamps_tiefenbrunnen,
                                       unit_symbols = ["Wasserstand", "", "m.ü.m"],
                                       imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_waterlevel_history.png",
-                                      ylim = (-15, 40),
                                       dateformatter = "%d %b",
                                       showMin = True,
                                       showMean = True,
@@ -503,7 +492,6 @@ def generate_last_7_days_graphs():
                                       timestamps = timestamps_tiefenbrunnen,
                                       unit_symbols = ["Wassertemperatur", "T", "°C"],
                                       imagepath = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images/graphs/tiefenbrunnen_watertemp_history.png",
-                                      ylim = (-15, 40),
                                       dateformatter = "%d %b",
                                       showMin = True,
                                       showMean = True,
@@ -692,11 +680,11 @@ def generate_simple_plot(station,
                         timestamps,
                         unit_symbols = List, 
                         imagepath = str,
-                        ylim = List,
                         dateformatter = str, 
                         showMin = True, 
                         showMean = True, 
-                        showMax = True
+                        showMax = True,
+                        ylim: list = None
                         ):
   """
   create simple plot
@@ -751,7 +739,8 @@ def generate_simple_plot(station,
   ax.set_title(f"Number of measuremens: {len(np.array(measurements_array))}", fontsize = 6)
   ax.set_ylabel(f"{unit_symbols[0]} {unit_symbols[1]} in {unit_symbols[2]}", fontsize = 8)
   ax.set_xlabel(f"Zeitachse", fontsize = 6)
-  ax.set_ylim(ylim[0], ylim[1])
+  if ylim != None:
+    ax.set_ylim(ylim[0], ylim[1])
   ax.xaxis.set_major_formatter(mpl_dates.DateFormatter(dateformatter))
 
  ## set figure attributes
