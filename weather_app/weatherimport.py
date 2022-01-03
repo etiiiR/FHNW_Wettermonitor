@@ -1317,7 +1317,7 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
 
   return best_date
 
-def forecast_of_tomorrow(station: str, date_searchBestRecord: datetime) -> tuple[datetime, pd.DataFrame]:
+def forecast_of_tomorrow(station: str, date_searchBestRecord: datetime):
   """
   Get date and values of a day  which is the closest to date_searchBestRecord by cos simularity 
   
