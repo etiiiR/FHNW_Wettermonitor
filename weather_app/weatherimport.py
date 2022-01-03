@@ -205,7 +205,7 @@ def reset_graphs():
   # replace possible old graphs with a message
   static_images = str(Path(os.path.dirname(os.path.realpath(__file__)))) + "/static/Images"
   for station in ["tiefenbrunnen", "mythenquai"]:
-      for category in ["wind", "temperature", "water"]:
+      for category in ["wind", "temperature", "watertemp", "dewpoint", "waterlevel", "pressure"]:
           for type in ["today", "tomorrow", "history"]:
               shutil.copyfile(static_images+"/generating_plot.png", f"{get_graph_location()}/{station}_{category}_{type}.png")
 
