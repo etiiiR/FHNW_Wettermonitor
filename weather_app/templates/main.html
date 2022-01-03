@@ -20,7 +20,7 @@
         </div>
 
         <div class="row flex-align-stretch" style='min-height: 33vh; margin-bottom:3vh;'>
-            <div class="cell" onclick="location.href='/wetterstation/{{station}}/water';">
+            <div class="cell" onclick="location.href='/wetterstation/{{station}}/waterlevel';">
                 <h2><u>Wasser</u></h2>
                 <h2><img src= {{ url_for('static', filename = 'Images/weather/rain.png'      ) }} style="width: 1em" border="0"> {{ weather["precipitation"] }}mm</h2>
                 <h2><img src= {{ url_for('static', filename = 'Images/weather/sea-level.png' ) }} style="width: 1em" border="0"> {{ weather["water_level"] }}m ü. M.</h2>
