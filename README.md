@@ -7,6 +7,8 @@ Siehe [INSTALLATION.md](INSTALLATION.md)
 ```
 pip install -r weather_app/requirements.txt
 ```
+Siehe [DEVELOPMENT.md](DEVELOPMENT.md)
+
 
 # Betrieb
 TODO:
