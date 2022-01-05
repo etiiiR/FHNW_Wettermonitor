@@ -72,7 +72,20 @@ DB_Name = Datenbankname
  ┣ 📜kiosk.sh
  ┣ 📜Powerpoint.pptx
  ┣ 📜README.md
- ┣ 📜response_time.txt
- ┣ 📜ui-sketch-1.png
- ┣ 📜ui-sketch-2.png
- ┣ 📜ui-sketch-3.png                                              
+ ┣ 📜response_time.txt                                          
+
+
+
+
+
+# Künftiges Ui und Upcoming Features
+## Dark Mode und andere Themes
+![image info](./dark_mode.png)
+
+## Roadmap
+- User Feedback implementieren
+- Satelliten Bilder für Graphs
+- Alerts per SMS und Email für geplante Sportaktivitäten
+- Docker integration mit Docker File und Docker Compose 
+- Performance Optimierungen
+
