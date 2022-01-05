@@ -58,7 +58,7 @@ DB_Name = Datenbankname
  ┃ ┣ 📜config.ini                                               # Config für die Datenbank & Webservice Url / Endpoints
  ┃ ┣ 📜getEntries.py
  ┃ ┣ 📜Logger.py
- ┃ ┣ 📜main.py                                                   # Webservice Instaziereung und zentraler Controller
+ ┃ ┣ 📜main.py                                                   # Webservice Instanziierung  und zentraler Controller
  ┃ ┣ 📜requirements.txt                                          # pip install -r requirements.txt 
  ┃ ┣ 📜test_sean.ipynb
  ┃ ┣ 📜weatherdata.py                                            # Helper Klasse für Controller
