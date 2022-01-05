@@ -82,15 +82,25 @@ DB_Name = Datenbankname
 ## Dark Mode und andere Themes
 ![image info](./dark_mode.png)
 
-## Roadmap
-- User Feedback implementieren
-- Satelliten Bilder für Graphs
-- Alerts per SMS und Email für geplante Sportaktivitäten
-- Docker integration mit Docker File und Docker Compose 
-- Performance Optimierungen
+# Zukünftiges Design
+![alt text](ui-sketch-1.png)
 
-## weitere Features
- - Sonnenaufgang und Sonnenuntergang anzeigen
- - Warnungen von Swissmeteo darstellen
- - Wettermonitor nicht im Userverzeichnis installieren
- - Production ready Webserver für Flask verwenden
+## Detailansicht Wind, Temperaturen und Wasser
+![alt text](ui-sketch-2.png)
+
+## Detailansicht Warnungen und Diverses
+![alt text](ui-sketch-3.png)
+
+
+
+## Roadmap
+  - User Feedback implementieren
+  - Satelliten Bilder für Graphs
+  - Alerts per SMS und Email für geplante Sportaktivitäten
+  - Docker integration mit Docker File und Docker Compose 
+  - Performance Optimierungen
+  - Sonnenaufgang und Sonnenuntergang anzeigen
+  - Warnungen von Swissmeteo darstellen
+  - Wettermonitor nicht im Userverzeichnis installieren
+  - Production ready Webserver für Flask verwenden
+
