@@ -85,7 +85,7 @@ python3 main.py --config=config.ini
 ## Dark Mode und andere Themes
 ![image info](./dark_mode.png)
 
-# Zukünftiges Design
+## Zukünftiges Design
 ![alt text](ui-sketch-1.png)
 
 ## Detailansicht Wind, Temperaturen und Wasser
