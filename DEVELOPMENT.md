@@ -24,15 +24,15 @@ DB_Name = Datenbankname
 
 
 # Projekt Struktur
-📦FHNW_Wettermonitor
- ┣ 📂Messwerte
- ┃ ┣ 📜messwerte_mythenquai_2007-2020.csv
- ┃ ┗ 📜messwerte_tiefenbrunnen_2007-2020.csv
+📦FHNW_Wettermonitor 
+ ┣ 📂Messwerte                                                # CSV Template Files
+ ┃ ┣ 📜messwerte_mythenquai_2007-2020.csv                     # Mythenquai Messwerte
+ ┃ ┗ 📜messwerte_tiefenbrunnen_2007-2020.csv                  # Tiefenbrunnen Messwerte
  ┣ 📂weather_app
- ┃ ┣ 📂static
- ┃ ┃ ┣ 📂Images
+ ┃ ┣ 📂static                                                 # Static Files
+ ┃ ┃ ┣ 📂Images                                               # Static Images
  ┃ ┃ ┃ ┣ 📂graphs
- ┃ ┃ ┃ ┣ 📂weather
+ ┃ ┃ ┃ ┣ 📂weather                                            # Static Weather Images für Website
  ┃ ┃ ┃ ┃ ┣ 📜arrow.png
  ┃ ┃ ┃ ┃ ┣ 📜barometer.png
  ┃ ┃ ┃ ┃ ┣ 📜humidity.png
@@ -45,24 +45,24 @@ DB_Name = Datenbankname
  ┃ ┃ ┃ ┣ 📜generating_plot.png
  ┃ ┃ ┃ ┗ 📜loading.png
  ┃ ┃ ┣ 📜jquery-3.4.1.min.js
- ┃ ┃ ┣ 📜metro-all.min.css
- ┃ ┃ ┣ 📜metro.min.js
+ ┃ ┃ ┣ 📜metro-all.min.css                                      # Metro UI CSS
+ ┃ ┃ ┣ 📜metro.min.js                                           # Metro UI JS
  ┃ ┃ ┣ 📜scripts.js
- ┃ ┃ ┣ 📜stop_server.js
- ┃ ┃ ┗ 📜styles.css
- ┃ ┣ 📂templates
- ┃ ┃ ┣ 📜graph.html
- ┃ ┃ ┣ 📜index.html
- ┃ ┃ ┣ 📜load_data.html
- ┃ ┃ ┗ 📜main.html
- ┃ ┣ 📜config.ini
+ ┃ ┃ ┣ 📜stop_server.js                                         # Script zum stoppen des Javascript Web Servers 
+ ┃ ┃ ┗ 📜styles.css                                             # Stylesheet für die Website
+ ┃ ┣ 📂templates                                                # Templates für die Website ref(https://flask.palletsprojects.com/en/2.0.x/tutorial/templates/)
+ ┃ ┃ ┣ 📜graph.html                                             # Template für die Graphs
+ ┃ ┃ ┣ 📜index.html                                             # Template für die Startseite Navigationsleiste und imports der anderen Seiten
+ ┃ ┃ ┣ 📜load_data.html                                         # Template für die Daten laden auch splash screen gennant
+ ┃ ┃ ┗ 📜main.html                                              # Daarstellungs Template für die Startseite
+ ┃ ┣ 📜config.ini                                               # Config für die Datenbank & Webservice Url / Endpoints
  ┃ ┣ 📜getEntries.py
  ┃ ┣ 📜Logger.py
  ┃ ┣ 📜main.py
- ┃ ┣ 📜requirements.txt
+ ┃ ┣ 📜requirements.txt                                          # pip install -r requirements.txt 
  ┃ ┣ 📜test_sean.ipynb
- ┃ ┣ 📜weatherdata.py
- ┃ ┣ 📜weatherimport.py
+ ┃ ┣ 📜weatherdata.py                                            # Helper Klasse für Controller
+ ┃ ┣ 📜weatherimport.py                                          # Controller Schicht
  ┃ ┣ 📜wettermonitor.log
  ┣ 📜DEVELOPMENT.md
  ┣ 📜diagram.png
@@ -75,4 +75,4 @@ DB_Name = Datenbankname
  ┣ 📜response_time.txt
  ┣ 📜ui-sketch-1.png
  ┣ 📜ui-sketch-2.png
- ┣ 📜ui-sketch-3.png
+ ┣ 📜ui-sketch-3.png                                              
