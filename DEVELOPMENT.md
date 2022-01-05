@@ -50,7 +50,7 @@ DB_Name = Datenbankname
  ┃ ┃ ┣ 📜scripts.js
  ┃ ┃ ┣ 📜stop_server.js                                         # Script zum stoppen des Javascript Web Servers 
  ┃ ┃ ┗ 📜styles.css                                             # Stylesheet für die Website
- ┃ ┣ 📂templates                                                # Templates für die Website ref(https://flask.palletsprojects.com/en/2.0.x/tutorial/templates/)
+ ┃ ┣ 📂templates                                                # View Schicht Templates für die Website ref(https://flask.palletsprojects.com/en/2.0.x/tutorial/templates/)
  ┃ ┃ ┣ 📜graph.html                                             # Template für die Graphs
  ┃ ┃ ┣ 📜index.html                                             # Template für die Startseite Navigationsleiste und imports der anderen Seiten
  ┃ ┃ ┣ 📜load_data.html                                         # Template für die Daten laden auch splash screen gennant
@@ -58,11 +58,11 @@ DB_Name = Datenbankname
  ┃ ┣ 📜config.ini                                               # Config für die Datenbank & Webservice Url / Endpoints
  ┃ ┣ 📜getEntries.py
  ┃ ┣ 📜Logger.py
- ┃ ┣ 📜main.py
+ ┃ ┣ 📜main.py                                                   # Webservice Instaziereung und zentraler Controller
  ┃ ┣ 📜requirements.txt                                          # pip install -r requirements.txt 
  ┃ ┣ 📜test_sean.ipynb
  ┃ ┣ 📜weatherdata.py                                            # Helper Klasse für Controller
- ┃ ┣ 📜weatherimport.py                                          # Controller Schicht
+ ┃ ┣ 📜weatherimport.py                                          # Controller & Modell Schicht mit allen Funktionalitäten
  ┃ ┣ 📜wettermonitor.log
  ┣ 📜DEVELOPMENT.md
  ┣ 📜diagram.png
