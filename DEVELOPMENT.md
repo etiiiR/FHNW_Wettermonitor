@@ -89,3 +89,8 @@ DB_Name = Datenbankname
 - Docker integration mit Docker File und Docker Compose 
 - Performance Optimierungen
 
+## weitere Features
+ - Sonnenaufgang und Sonnenuntergang anzeigen
+ - Warnungen von Swissmeteo darstellen
+ - Wettermonitor nicht im Userverzeichnis installieren
+ - Production ready Webserver für Flask verwenden
