@@ -1117,11 +1117,11 @@ def get_mean_of_day(df, measurements_converted, vector_lim_weight):
 
     mean_of_measurements_dateSearchFor_normalized_list.append(np.nanmean(df[measurement]) * weight)
 
-    pythoagoras = 0
-    for mean_measurement in mean_of_measurements_dateSearchFor_normalized_list:
-      pythoagoras += mean_measurement ** 2
+  pythoagoras = 0
+  for mean_measurement in mean_of_measurements_dateSearchFor_normalized_list:
+    pythoagoras += mean_measurement ** 2
 
-    pythoagoras = np.sqrt(pythoagoras)
+  pythoagoras = np.sqrt(pythoagoras)
 
   return pythoagoras
 
@@ -1196,20 +1196,20 @@ def nearest_neighbour(station: str, date_searchBestRecord: datetime, timeArea_mo
     diff_means.append(diffMean_of_hist_day_norm) #add value
 
 
-    if not best_meanDifference: #if no value stored
+    if best_meanDifference == None: #if no value stored
       best_meanDifference = diffMean_of_hist_day_norm
 
     elif diffMean_of_hist_day_norm < best_meanDifference:
       best_meanDifference = diffMean_of_hist_day_norm
 
-    if not worst_meanDifference: #if no value stored
+    if worst_meanDifference == None: #if no value stored
       worst_meanDifference = diffMean_of_hist_day_norm
 
-    elif diffMean_of_hist_day_norm > best_meanDifference:
+    elif diffMean_of_hist_day_norm > worst_meanDifference:
       worst_meanDifference = diffMean_of_hist_day_norm
   
   meanDifference_range = worst_meanDifference - best_meanDifference #calculate range
-  min_meanDifference = ((meanDifference_range / 100) * mean_in_range_percent) + best_meanDifference #mean of historical date has to be in range of meanDifference_range / 10 
+  min_meanDifference = ((meanDifference_range / 100) * mean_in_range_percent) + best_meanDifference #mean of historical date has to be in range of meanDifference_range / 100 
   
 
   #progress counter
