@@ -12,9 +12,9 @@ echo "dtoverlay=disable-bt" | sudo tee -a /boot/config.txt > /dev/null
 echo "boot_delay=0" | sudo tee -a /boot/config.txt > /dev/null
 
 
-sudo apt-get update
-sudo apt-get upgrade
-sudo apt-get install
+sudo apt-get -y update
+sudo apt-get -y upgrade
+sudo apt-get -y install
 
 
 
