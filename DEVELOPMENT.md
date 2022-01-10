@@ -35,6 +35,7 @@ python3 main.py --config=config.ini
 
 
 # Projekt Struktur
+```
 📦FHNW_Wettermonitor 
  ┣ 📂Messwerte                                                # CSV Template Files
  ┃ ┣ 📜messwerte_mythenquai_2007-2020.csv                     # Mythenquai Messwerte
@@ -84,7 +85,7 @@ python3 main.py --config=config.ini
  ┣ 📜Powerpoint.pptx
  ┣ 📜README.md
  ┣ 📜response_time.txt                                          
-
+```
 
 
 # Künftiges Ui und Upcoming Features
