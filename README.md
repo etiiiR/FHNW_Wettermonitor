@@ -74,3 +74,8 @@ Wir sind zum folgendem Schluss gekommen:
  - Die paar Sekunden waren nie mehr als 6.6s
  - Es macht also Sinn jeweils um xx:05:10 xx:15:10 xx:25:10 ... die API anzufragen.
  - Pareto-Diagramm: ![Pareto-Diagramm](diagram.png)
+
+ ## hinzufügen weiterer Wetterdaten-Quellen
+ - falls jetziger service genutzt wird:
+    - unter weatherdata.py -> class Config -> stations -> weiterer stationsName hinzufügen
+    - unter templates/index.html -> auf Zeile 20 -> <li><a href="/wetterstation/neuer_stations_name" class={{ "text-bold" if station == "neuer_stations_name" }}>neuer_stations_name</a></li>
