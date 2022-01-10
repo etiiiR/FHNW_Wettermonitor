@@ -26,6 +26,14 @@ DB_Name = Datenbankname
 python3 main.py --config=config.ini
 ```
 
+
+ # Hinzufügen weiterer Wetterdaten-Quellen
+ - falls jetziger service genutzt wird:
+    - unter weatherdata.py -> class Config -> stations -> weiterer stationsName hinzufügen
+    - unter templates/index.html -> auf Zeile 20 -> <li><a href="/wetterstation/neuer_stations_name" class={{ "text-bold" if station == "neuer_stations_name" }}>neuer_stations_name</a></li>
+
+
+
 # Projekt Struktur
 📦FHNW_Wettermonitor 
  ┣ 📂Messwerte                                                # CSV Template Files
@@ -76,8 +84,6 @@ python3 main.py --config=config.ini
  ┣ 📜Powerpoint.pptx
  ┣ 📜README.md
  ┣ 📜response_time.txt                                          
-
-
 
 
 
