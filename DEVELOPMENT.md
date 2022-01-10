@@ -4,7 +4,7 @@
 journalctl -u kiosk.service -f
 ```
 
-# Configs ändern bei Service adressen
+# Service Adresse ändern org:https://tecdottir.herokuapp.com/measurements/ 
 Folgende Zeile ändern in der weather_app/config.ini
 
 [Service]
