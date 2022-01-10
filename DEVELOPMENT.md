@@ -21,12 +21,10 @@ DB_PORT = Ihr Datenbank port
 DB_Name = Datenbankname
 
 
- ## hinzufügen weiterer Wetterdaten-Quellen
- - falls jetziger service genutzt wird:
-    - unter weatherdata.py -> class Config -> stations -> weiterer stationsName hinzufügen
-    - unter templates/index.html -> auf Zeile 20 -> <li><a href="/wetterstation/neuer_stations_name" class={{ "text-bold" if station == "neuer_stations_name" }}>neuer_stations_name</a></li>
-
-
+# Run development Server
+```bash
+python3 main.py --config=config.ini
+```
 
 # Projekt Struktur
 📦FHNW_Wettermonitor 
@@ -55,7 +53,7 @@ DB_Name = Datenbankname
  ┃ ┃ ┣ 📜scripts.js
  ┃ ┃ ┣ 📜stop_server.js                                         # Script zum stoppen des Javascript Web Servers 
  ┃ ┃ ┗ 📜styles.css                                             # Stylesheet für die Website
- ┃ ┣ 📂templates                                                # Templates für die Website ref(https://flask.palletsprojects.com/en/2.0.x/tutorial/templates/)
+ ┃ ┣ 📂templates                                                # View Schicht Templates für die Website ref(https://flask.palletsprojects.com/en/2.0.x/tutorial/templates/)
  ┃ ┃ ┣ 📜graph.html                                             # Template für die Graphs
  ┃ ┃ ┣ 📜index.html                                             # Template für die Startseite Navigationsleiste und imports der anderen Seiten
  ┃ ┃ ┣ 📜load_data.html                                         # Template für die Daten laden auch splash screen gennant
@@ -63,11 +61,11 @@ DB_Name = Datenbankname
  ┃ ┣ 📜config.ini                                               # Config für die Datenbank & Webservice Url / Endpoints
  ┃ ┣ 📜getEntries.py
  ┃ ┣ 📜Logger.py
- ┃ ┣ 📜main.py
+ ┃ ┣ 📜main.py                                                   # Webservice Instanziierung und zentraler Controller
  ┃ ┣ 📜requirements.txt                                          # pip install -r requirements.txt 
  ┃ ┣ 📜test_sean.ipynb
  ┃ ┣ 📜weatherdata.py                                            # Helper Klasse für Controller
- ┃ ┣ 📜weatherimport.py                                          # Controller Schicht
+ ┃ ┣ 📜weatherimport.py                                          # Controller & Modell Schicht mit allen Funktionalitäten
  ┃ ┣ 📜wettermonitor.log
  ┣ 📜DEVELOPMENT.md
  ┣ 📜diagram.png
@@ -77,10 +75,35 @@ DB_Name = Datenbankname
  ┣ 📜kiosk.sh
  ┣ 📜Powerpoint.pptx
  ┣ 📜README.md
- ┣ 📜response_time.txt
- ┣ 📜ui-sketch-1.png
- ┣ 📜ui-sketch-2.png
- ┣ 📜ui-sketch-3.png                                              
+ ┣ 📜response_time.txt                                          
 
 
+
+
+
+# Künftiges Ui und Upcoming Features
+## Dark Mode und andere Themes
+![image info](./dark_mode.png)
+
+## Zukünftiges Design
+![alt text](ui-sketch-1.png)
+
+## Detailansicht Wind, Temperaturen und Wasser
+![alt text](ui-sketch-2.png)
+
+## Detailansicht Warnungen und Diverses
+![alt text](ui-sketch-3.png)
+
+
+
+## Roadmap
+  - User Feedback implementieren
+  - Satelliten Bilder für Graphs
+  - Alerts per SMS und Email für geplante Sportaktivitäten
+  - Docker integration mit Docker File und Docker Compose 
+  - Performance Optimierungen
+  - Sonnenaufgang und Sonnenuntergang anzeigen
+  - Warnungen von Swissmeteo darstellen
+  - Wettermonitor nicht im Userverzeichnis installieren
+  - Flaskwebgui ersetzten mit electron-flask production ready
 
