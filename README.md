@@ -10,12 +10,6 @@ pip install -r weather_app/requirements.txt
 Siehe [DEVELOPMENT.md](DEVELOPMENT.md)
 
 
-# Betrieb
-TODO:
- - Bedienungsanleitung
- - Wo Log ansehen?
- - Wie service starten/stoppen?
-
 # Zukünftiges Design
 ![alt text](ui-sketch-1.png)
 
