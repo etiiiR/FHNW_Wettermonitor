@@ -28,8 +28,7 @@ DB_Name = Datenbankname
  1. docker pull influxdb:1.8.10
  2. docker run -p 8086:8086 \
       -v influxdb:/var/lib/influxdb \
-      influxdb:1.8
-## Python 3.8
+      influxdb:1.8.10
 
 
 # Run development Server
