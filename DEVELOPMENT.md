@@ -24,7 +24,7 @@ DB_Name = Datenbankname
  - [InfluxDB](https://portal.influxdata.com/downloads/) (vorzugsweise eine v1.x Version)
  - Python 3.8 oder neuer
 
-## Docker Influx alternative
+## Docker [InfluxDB](https://hub.docker.com/_/influxdb/) alternative
  1. docker pull influxdb:1.8.10
  2. docker run -p 8086:8086 \
       -v influxdb:/var/lib/influxdb \
