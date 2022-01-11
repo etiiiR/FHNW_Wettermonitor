@@ -20,8 +20,12 @@ password = Datenbankpasswort!! nicht im cleartext sondern als env variable
 DB_PORT = Ihr Datenbank port 
 DB_Name = Datenbankname
 
+# Requirements
+ - [InfluxDB](https://portal.influxdata.com/downloads/) (vorzugsweise eine v1.x Version)
+ - Python 3.8 oder neuer
 
 # Run development Server
+InfluxDB muss auch gestartet sein.
 ```bash
 python3 main.py --config=config.ini
 ```
